@@ -1,15 +1,16 @@
 import { Bloco, EstadoFactura, LinhaVazia, TituloPagina } from '@/components/erp';
-import { GraficoFacturacao, type PontoMes } from '@/components/grafico-facturacao';
+import { GraficoGanhosGastos, type MesGanhosGastos } from '@/components/grafico-ganhos-gastos';
 import AppLayout from '@/layouts/app-layout';
 import { formatData, formatNumero } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-interface Mes extends PontoMes {
+interface Mes extends MesGanhosGastos {
+    n: number;
     recebido: string;
     compras: string;
-    resultado: string;
+    despesas: string;
 }
 
 interface Props {
@@ -24,9 +25,12 @@ interface Props {
         recebido: string;
         por_receber: string;
         compras: string;
+        despesas: string;
+        gastos: string;
         resultado: string;
     };
     meses: Mes[];
+    gastosPorCategoria: { categoria: string; valor: string }[];
     clientes: { id: number; nome: string; n: number; facturado: string; recebido: string; por_receber: string }[];
     categorias: { categoria: string; valor: string }[];
     facturas: {
@@ -49,22 +53,33 @@ const mesLongo = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeri
 const negativo = (v: string) => Number(v) < 0 && 'text-red-600 dark:text-red-400';
 const campoData = 'border-input bg-card focus-visible:ring-ring h-8 rounded-md border px-2 text-[13px] outline-none focus-visible:ring-2';
 
-export default function Resultados({ periodo, periodos, resumo: r, meses, clientes, categorias, facturas, mais_facturas }: Props) {
+export default function Resultados({
+    periodo,
+    periodos,
+    resumo: r,
+    meses,
+    gastosPorCategoria,
+    clientes,
+    categorias,
+    facturas,
+    mais_facturas,
+}: Props) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const [datas, setDatas] = useState({ de: periodo.de, ate: periodo.ate });
     const ir = (params: Record<string, string>) => router.get('/resultados', params, { preserveScroll: true, preserveState: true, replace: true });
     const maiorCategoria = Math.max(1, ...categorias.map((c) => Number(c.valor)));
+    const maiorGasto = Math.max(1, ...gastosPorCategoria.map((c) => Number(c.valor)));
 
     const celulas = [
         {
-            label: 'Facturado',
+            label: 'Ganhos',
             valor: r.facturado,
-            nota: `${r.n_facturas} ${r.n_facturas === 1 ? 'factura' : 'facturas'} · ${formatNumero(r.facturado_com_iva)} com IVA`,
+            nota: `facturado em ${r.n_facturas} ${r.n_facturas === 1 ? 'factura' : 'facturas'}`,
         },
+        { label: 'Gastos', valor: r.gastos, nota: `compras ${formatNumero(r.compras)} · despesas ${formatNumero(r.despesas)}` },
+        { label: 'Resultado', valor: r.resultado, nota: 'ganhos − gastos', destaque: true },
         { label: 'Recebido', valor: r.recebido, nota: 'pagamentos de clientes' },
         { label: 'Por receber', valor: r.por_receber, nota: 'das facturas do período' },
-        { label: 'Compras', valor: r.compras, nota: 'facturas de fornecedores' },
-        { label: 'Resultado', valor: r.resultado, nota: 'facturado − compras', destaque: true },
     ];
 
     return (
@@ -72,7 +87,7 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
             <Head title="Resultados" />
             <TituloPagina
                 titulo="Resultados"
-                descricao={`De ${formatData(periodo.de)} a ${formatData(periodo.ate)}. Valores em meticais, sem IVA; o facturado já desconta as notas de crédito.`}
+                descricao={`De ${formatData(periodo.de)} a ${formatData(periodo.ate)}. Ganhos e compras sem IVA; despesas pelo valor pago; em meticais.`}
             />
 
             <div className="mb-5 flex flex-wrap items-center gap-2">
@@ -141,9 +156,9 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
             )}
 
             <section className="mb-6">
-                <h2 className="mb-3 text-[15px] font-semibold">Facturado por mês</h2>
+                <h2 className="mb-3 text-[15px] font-semibold">Ganhos e gastos por mês</h2>
                 <div className="rounded-lg border px-2 pt-2 pb-2">
-                    <GraficoFacturacao pontos={meses} />
+                    <GraficoGanhosGastos meses={meses} />
                 </div>
             </section>
 
@@ -152,10 +167,11 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
                     <thead>
                         <tr>
                             <th>Mês</th>
-                            <th className="text-right">Facturado</th>
-                            <th className="text-right">Recebido</th>
+                            <th className="text-right">Ganhos</th>
                             <th className="text-right">Compras</th>
+                            <th className="text-right">Despesas</th>
                             <th className="text-right">Resultado</th>
+                            <th className="text-right">Recebido</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,9 +179,10 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
                             <tr key={m.mes}>
                                 <td className="first-letter:uppercase">{mesLongo.format(new Date(`${m.mes}-01T00:00:00Z`))}</td>
                                 <td className="text-right tabular-nums">{formatNumero(m.valor)}</td>
-                                <td className="text-right tabular-nums">{formatNumero(m.recebido)}</td>
                                 <td className="text-right tabular-nums">{formatNumero(m.compras)}</td>
+                                <td className="text-right tabular-nums">{formatNumero(m.despesas)}</td>
                                 <td className={cn('text-right font-medium tabular-nums', negativo(m.resultado))}>{formatNumero(m.resultado)}</td>
+                                <td className="text-muted-foreground text-right tabular-nums">{formatNumero(m.recebido)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -173,9 +190,10 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
                         <tr className="font-semibold">
                             <td className="px-4 py-2.5">Total</td>
                             <td className="px-3 py-2.5 text-right tabular-nums">{formatNumero(r.facturado)}</td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{formatNumero(r.recebido)}</td>
                             <td className="px-3 py-2.5 text-right tabular-nums">{formatNumero(r.compras)}</td>
-                            <td className={cn('px-4 py-2.5 text-right tabular-nums', negativo(r.resultado))}>{formatNumero(r.resultado)}</td>
+                            <td className="px-3 py-2.5 text-right tabular-nums">{formatNumero(r.despesas)}</td>
+                            <td className={cn('px-3 py-2.5 text-right tabular-nums', negativo(r.resultado))}>{formatNumero(r.resultado)}</td>
+                            <td className="px-4 py-2.5 text-right tabular-nums">{formatNumero(r.recebido)}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -213,7 +231,7 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
                     </table>
                 </Bloco>
 
-                <Bloco titulo="Por categoria de produto">
+                <Bloco titulo="Ganhos por categoria de produto">
                     <ul className="grid gap-3 p-4">
                         {categorias.length === 0 && <li className="text-muted-foreground py-6 text-center text-[13px]">Sem facturas no período</li>}
                         {categorias.map((c) => (
@@ -233,6 +251,36 @@ export default function Resultados({ periodo, periodos, resumo: r, meses, client
                     </ul>
                 </Bloco>
             </div>
+
+            <Bloco
+                titulo="Para onde foi o dinheiro"
+                className="mb-6"
+                accoes={
+                    <Link href="/despesas" className="text-muted-foreground hover:text-foreground text-[13px]">
+                        Ver despesas
+                    </Link>
+                }
+            >
+                <ul className="grid gap-3 p-4 md:grid-cols-2 md:gap-x-8">
+                    {gastosPorCategoria.length === 0 && (
+                        <li className="text-muted-foreground py-6 text-center text-[13px] md:col-span-2">Sem compras nem despesas no período</li>
+                    )}
+                    {gastosPorCategoria.map((c) => (
+                        <li key={c.categoria} className="grid gap-1">
+                            <div className="flex justify-between gap-3 text-[13.5px]">
+                                <span>{c.categoria}</span>
+                                <span className="font-medium tabular-nums">{formatNumero(c.valor)}</span>
+                            </div>
+                            <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+                                <div
+                                    className="h-full rounded-full bg-[var(--chart-2)]"
+                                    style={{ width: `${Math.max(2, (Number(c.valor) / maiorGasto) * 100)}%` }}
+                                />
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </Bloco>
 
             <Bloco titulo={`Facturas do período (${r.n_facturas})`}>
                 <table className="tabela">

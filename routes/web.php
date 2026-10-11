@@ -13,6 +13,7 @@ use App\Http\Controllers\Comercial\OrcamentoController;
 use App\Http\Controllers\Comercial\ProdutoController;
 use App\Http\Controllers\Comercial\ProdutoFotoController;
 use App\Http\Controllers\Comercial\TerceiroController;
+use App\Http\Controllers\Compras\DespesaController;
 use App\Http\Controllers\Compras\EncomendaFornecedorController;
 use App\Http\Controllers\Compras\FacturaFornecedorController;
 use App\Http\Controllers\Compras\PagamentoFornecedorController;
@@ -289,6 +290,16 @@ Route::middleware(['auth:web'])->group(function () {
         });
 
         Route::get('pagamentos-fornecedor', [PagamentoFornecedorController::class, 'index'])->name('pagamentos-fornecedor.index');
+    });
+
+    // Despesas do dia-a-dia (com as compras, são os gastos dos Resultados)
+    Route::middleware('can:despesas.ver')->group(function () {
+        Route::get('despesas', [DespesaController::class, 'index'])->name('despesas.index');
+        Route::middleware('can:despesas.registar')->group(function () {
+            Route::post('despesas', [DespesaController::class, 'store'])->name('despesas.store');
+            Route::put('despesas/{despesa}', [DespesaController::class, 'update'])->name('despesas.update');
+            Route::delete('despesas/{despesa}', [DespesaController::class, 'destroy'])->name('despesas.destroy');
+        });
     });
 
     // Administração

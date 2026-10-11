@@ -21,7 +21,7 @@ export function TituloPagina({
     icone?: LucideIcon;
     titulo: string;
     contagem?: number;
-    descricao?: string;
+    descricao?: ReactNode;
     accoes?: ReactNode;
 }) {
     return (

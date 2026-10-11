@@ -90,7 +90,7 @@ final class Permissoes
             ],
         ],
         'compras' => [
-            'label' => 'Compras a fornecedores',
+            'label' => 'Compras de matéria-prima',
             'permissoes' => [
                 'compras.ver' => 'Ver encomendas, facturas e pagamentos a fornecedores',
                 'compras.criar' => 'Criar e alterar rascunhos de encomendas e facturas de fornecedor',
@@ -99,10 +99,17 @@ final class Permissoes
                 'compras.pagar' => 'Registar pagamentos a fornecedores',
             ],
         ],
+        'despesas' => [
+            'label' => 'Despesas',
+            'permissoes' => [
+                'despesas.ver' => 'Ver as despesas (combustível, salários, renda...)',
+                'despesas.registar' => 'Registar, alterar e apagar despesas',
+            ],
+        ],
         'resultados' => [
             'label' => 'Resultados',
             'permissoes' => [
-                'resultados.ver' => 'Ver os resultados (facturado, recebido, compras e resultado)',
+                'resultados.ver' => 'Ver os resultados (ganhos, gastos e resultado)',
             ],
         ],
         'utilizadores' => [
@@ -171,7 +178,7 @@ final class Permissoes
             'facturas.ver', 'facturas.criar', 'facturas.validar', 'facturas.abandonar', 'pagamentos.ver', 'pagamentos.registar',
             'orcamentos.ver', 'orcamentos.criar', 'orcamentos.validar', 'orcamentos.fechar',
             'encomendas.ver', 'encomendas.criar', 'encomendas.validar', 'encomendas.fechar',
-            'compras.ver', 'compras.criar', 'compras.validar', 'compras.receber', 'compras.pagar',
+            'compras.ver', 'compras.criar', 'compras.validar', 'compras.receber', 'compras.pagar', 'despesas.ver', 'despesas.registar',
             'stock.ver', 'stock.movimentar', 'stock.inventariar',
             'reservas.ver', 'reservas.criar', 'reservas.confirmar', 'reservas.entregar',
             'resultados.ver',
@@ -185,7 +192,7 @@ final class Permissoes
         'Financeiro' => [
             'terceiros.ver', 'terceiros.gerir', 'produtos.ver', 'stock.ver', 'reservas.ver', 'facturas.ver', 'facturas.criar', 'facturas.validar',
             'facturas.abandonar', 'pagamentos.ver', 'pagamentos.registar', 'orcamentos.ver', 'encomendas.ver',
-            'compras.ver', 'compras.criar', 'compras.validar', 'compras.pagar',
+            'compras.ver', 'compras.criar', 'compras.validar', 'compras.pagar', 'despesas.ver', 'despesas.registar',
         ],
         'Armazém' => [
             'produtos.ver', 'produtos.gerir', 'stock.ver', 'stock.movimentar', 'stock.inventariar', 'reservas.ver', 'reservas.entregar',

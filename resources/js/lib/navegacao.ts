@@ -108,15 +108,17 @@ export const NAVEGACAO: GrupoNav[] = [
                 ],
             },
             {
-                label: 'Compras',
+                // Compras de matéria-prima e despesas do dia-a-dia: os gastos que os Resultados comparam com os ganhos
+                label: 'Compras e despesas',
                 href: '/encomendas-fornecedor',
                 icone: ShoppingCart,
-                permissao: 'compras.ver',
-                prefixos: ['/encomendas-fornecedor', '/facturas-fornecedor', '/pagamentos-fornecedor'],
+                permissao: ['compras.ver', 'despesas.ver'],
+                prefixos: ['/encomendas-fornecedor', '/facturas-fornecedor', '/pagamentos-fornecedor', '/despesas'],
                 subitens: [
-                    { label: 'Encomendas a fornecedores', href: '/encomendas-fornecedor' },
-                    { label: 'Facturas de fornecedores', href: '/facturas-fornecedor' },
-                    { label: 'Pagamentos a fornecedores', href: '/pagamentos-fornecedor' },
+                    { label: 'Encomendas de matéria-prima', href: '/encomendas-fornecedor', permissao: 'compras.ver' },
+                    { label: 'Facturas de fornecedores', href: '/facturas-fornecedor', permissao: 'compras.ver' },
+                    { label: 'Pagamentos a fornecedores', href: '/pagamentos-fornecedor', permissao: 'compras.ver' },
+                    { label: 'Despesas', href: '/despesas', permissao: 'despesas.ver' },
                 ],
             },
         ],

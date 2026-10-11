@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Despesa;
 use App\Models\Factura;
 use App\Models\Terceiro;
 use App\Models\User;
@@ -58,6 +59,8 @@ class ResultadosTest extends TestCase
         $this->facturaValidada($cliente, $hoje, '500');
         app(FacturaService::class)->registarPagamento($paga, ['data' => $hoje, 'metodo' => 'numerario', 'valor' => '1160'], $this->admin);
         $this->compraValidada($hoje, '300');
+        Despesa::forceCreate(['data' => $hoje, 'categoria' => 'combustivel', 'descricao' => 'Gasóleo', 'valor' => '200', 'metodo' => 'numerario']);
+        Despesa::forceCreate(['data' => now()->subYear()->toDateString(), 'categoria' => 'renda', 'descricao' => 'Renda antiga', 'valor' => '999', 'metodo' => 'numerario']);
         // Fora do período: não conta
         $this->facturaValidada($cliente, now()->subYear()->toDateString(), '9999');
 
@@ -72,7 +75,11 @@ class ResultadosTest extends TestCase
                 ->where('resumo.recebido', '1160.00')
                 ->where('resumo.por_receber', '580.00')
                 ->where('resumo.compras', '300.00')
-                ->where('resumo.resultado', '1200.00')
+                ->where('resumo.despesas', '200.00')
+                ->where('resumo.gastos', '500.00')
+                ->where('resumo.resultado', '1000.00')
+                ->where('meses.0.gastos', '500.00')
+                ->where('gastosPorCategoria', [['categoria' => 'Matéria-prima (compras)', 'valor' => '300.00'], ['categoria' => 'Combustível e transporte', 'valor' => '200.00']])
                 ->has('meses', 1)
                 ->where('meses.0.valor', '1500.00')
                 ->where('clientes.0.nome', 'Hotel Costa do Sol')

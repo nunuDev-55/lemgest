@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Despesa;
 use App\Models\Factura;
 use App\Models\FacturaFornecedor;
 use App\Models\FacturaLinha;
@@ -16,8 +17,9 @@ use Illuminate\Support\Collection;
  * - Facturado: facturas validadas ou pagas com data no período, menos as notas de crédito do período (valores sem IVA).
  * - Recebido: pagamentos de clientes com data no período.
  * - Por receber: o que ainda falta pagar das facturas do período.
- * - Compras: facturas de fornecedores validadas ou pagas com data no período (sem IVA).
- * - Resultado: facturado − compras.
+ * - Compras: facturas de fornecedores (matéria-prima) validadas ou pagas com data no período (sem IVA).
+ * - Despesas: gastos do dia-a-dia registados com data no período (valor pago).
+ * - Ganhos = facturado; gastos = compras + despesas; resultado = ganhos − gastos.
  *
  * As somas fazem-se em PHP, para darem o mesmo em MariaDB e nos testes (SQLite).
  */
@@ -40,11 +42,15 @@ class Resultados
         $compras = FacturaFornecedor::whereIn('estado', [FacturaFornecedor::VALIDADA, FacturaFornecedor::PAGA])
             ->whereDate('data', '>=', $de->toDateString())->whereDate('data', '<=', $ate->toDateString())
             ->get(['id', 'data', 'total_sem_iva']);
+        $despesas = Despesa::whereDate('data', '>=', $de->toDateString())->whereDate('data', '<=', $ate->toDateString())
+            ->get(['id', 'data', 'categoria', 'valor']);
 
         $soma = fn (Collection $c, string $campo) => $c->reduce(fn (string $t, $x) => bcadd($t, (string) $x->{$campo}, 2), '0.00');
 
         $facturado = bcsub($soma($facturas, 'total_sem_iva'), $soma($notas, 'total_sem_iva'), 2);
         $totalCompras = $soma($compras, 'total_sem_iva');
+        $totalDespesas = $soma($despesas, 'valor');
+        $gastos = bcadd($totalCompras, $totalDespesas, 2);
 
         return [
             'resumo' => [
@@ -56,9 +62,12 @@ class Resultados
                 'recebido' => $soma($pagamentos, 'valor'),
                 'por_receber' => $facturas->where('estado', Factura::VALIDADA)->reduce(fn (string $t, Factura $f) => bcadd($t, $f->emFalta(), 2), '0.00'),
                 'compras' => $totalCompras,
-                'resultado' => bcsub($facturado, $totalCompras, 2),
+                'despesas' => $totalDespesas,
+                'gastos' => $gastos,
+                'resultado' => bcsub($facturado, $gastos, 2),
             ],
-            'meses' => $this->porMes($de, $ate, $facturas, $notas, $pagamentos, $compras),
+            'meses' => $this->porMes($de, $ate, $facturas, $notas, $pagamentos, $compras, $despesas),
+            'gastosPorCategoria' => $this->gastosPorCategoria($totalCompras, $despesas),
             'clientes' => $this->porCliente($facturas, $notas, $pagamentos),
             'categorias' => $this->porCategoria($facturas),
             'facturas' => $facturas->take(100)->map(fn (Factura $f) => [
@@ -79,11 +88,11 @@ class Resultados
     }
 
     /** @return list<array<string, mixed>> Um ponto por mês do período (também os meses sem movimento) */
-    private function porMes(CarbonImmutable $de, CarbonImmutable $ate, Collection $facturas, Collection $notas, Collection $pagamentos, Collection $compras): array
+    private function porMes(CarbonImmutable $de, CarbonImmutable $ate, Collection $facturas, Collection $notas, Collection $pagamentos, Collection $compras, Collection $despesas): array
     {
         $meses = [];
         for ($m = $de->startOfMonth(); $m <= $ate; $m = $m->addMonth()) {
-            $meses[$m->format('Y-m')] = ['mes' => $m->format('Y-m'), 'valor' => '0.00', 'n' => 0, 'recebido' => '0.00', 'compras' => '0.00'];
+            $meses[$m->format('Y-m')] = ['mes' => $m->format('Y-m'), 'valor' => '0.00', 'n' => 0, 'recebido' => '0.00', 'compras' => '0.00', 'despesas' => '0.00'];
         }
         $somar = function (Collection $c, string $campoValor, string $destino, int $sinal = 1, bool $contar = false) use (&$meses) {
             foreach ($c as $x) {
@@ -102,8 +111,27 @@ class Resultados
         $somar($notas, 'total_sem_iva', 'valor', -1);
         $somar($pagamentos, 'valor', 'recebido');
         $somar($compras, 'total_sem_iva', 'compras');
+        $somar($despesas, 'valor', 'despesas');
 
-        return array_values(array_map(fn ($m) => [...$m, 'resultado' => bcsub($m['valor'], $m['compras'], 2)], $meses));
+        return array_values(array_map(function ($m) {
+            $gastos = bcadd($m['compras'], $m['despesas'], 2);
+
+            return [...$m, 'gastos' => $gastos, 'resultado' => bcsub($m['valor'], $gastos, 2)];
+        }, $meses));
+    }
+
+    /** @return list<array{categoria: string, valor: string}> Para onde foi o dinheiro: compras de matéria-prima e cada categoria de despesa */
+    private function gastosPorCategoria(string $compras, Collection $despesas): array
+    {
+        $linhas = $despesas->groupBy('categoria')->map(fn (Collection $ds, string $c) => [
+            'categoria' => Despesa::CATEGORIAS[$c] ?? $c,
+            'valor' => $ds->reduce(fn (string $t, Despesa $d) => bcadd($t, (string) $d->valor, 2), '0.00'),
+        ])->values();
+        if (bccomp($compras, '0', 2) > 0) {
+            $linhas->push(['categoria' => 'Matéria-prima (compras)', 'valor' => $compras]);
+        }
+
+        return $linhas->sortByDesc(fn ($c) => (float) $c['valor'])->values()->all();
     }
 
     /** @return list<array<string, mixed>> Os 10 clientes com mais facturado no período */
