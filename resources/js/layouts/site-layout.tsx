@@ -1,8 +1,8 @@
 import { Notificacoes } from '@/components/notificacoes';
 import { cn } from '@/lib/utils';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Mail, MapPin, MessageCircle, Phone, ShoppingBag, UserRound } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { Mail, MapPin, Menu, MessageCircle, Phone, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 /** Dados partilhados nas páginas públicas (site, catálogo, área do cliente) */
 export interface DadosSite {
@@ -31,90 +31,156 @@ export function linkWhatsApp(numero: string | null | undefined, texto?: string):
     return `https://wa.me/${completo}${texto ? `?text=${encodeURIComponent(texto)}` : ''}`;
 }
 
+/** O site e a área do cliente são sempre claros, mesmo com o tema escuro do LemGest ligado (volta ao sair) */
+export function useSempreClaro() {
+    useEffect(() => {
+        const raiz = document.documentElement;
+        const tinhaEscuro = raiz.classList.contains('dark');
+        raiz.classList.remove('dark');
+        return () => {
+            if (tinhaEscuro) raiz.classList.add('dark');
+        };
+    }, []);
+}
+
 export function useSite() {
     const props = usePage<DadosSite>().props;
     const pode = (permissao: string) => (props.cliente?.permissoes ?? []).includes(permissao);
     return { ...props, pode };
 }
 
-/** Site público e catálogo: cabeçalho com a marca, o catálogo e a conta; rodapé com os contactos */
-export default function SiteLayout({ titulo, children, largo }: { titulo: string; children: ReactNode; largo?: boolean }) {
+const LIGACOES = [
+    { label: 'Início', href: '/' },
+    { label: 'Catálogo', href: '/catalogo' },
+    { label: 'Eventos', href: '/#eventos' },
+    { label: 'Como reservar', href: '/#como-reservar' },
+    { label: 'Contactos', href: '#contactos' },
+];
+
+/** Site público e catálogo: tons quentes e sempre claros, com a cor ameixa da LemServ */
+export default function SiteLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
     const { loja, cliente, carrinho, pode, equipa } = useSite();
+    const [menu, setMenu] = useState(false);
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
     const nome = loja?.nome_comercial ?? 'LemServ';
+    const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de informações sobre aluguer.');
+
+    useSempreClaro();
+
+    const activo = (href: string) => (href === '/' ? caminho === '/' : href.startsWith('/') && !href.includes('#') && caminho.startsWith(href));
 
     return (
-        <div className="bg-background text-foreground flex min-h-svh flex-col">
+        <div className="site bg-background text-foreground flex min-h-svh flex-col">
             <Head title={titulo} />
             {equipa && !cliente && (
-                <div className="bg-foreground text-background px-4 py-1.5 text-center text-[12.5px]">
+                <div className="bg-primary text-primary-foreground px-4 py-1.5 text-center text-[12.5px]">
                     Está a ver a loja como equipa ({equipa.nome}): vê os preços e a disponibilidade como um cliente.{' '}
                     <a href="/painel" className="font-medium underline underline-offset-2">
                         Voltar ao LemGest
                     </a>
                 </div>
             )}
-            <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
+            <div className="hidden bg-[var(--tinta)] px-4 py-2 text-[12.5px] text-white/80 sm:block">
+                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+                    <span>Entregamos, montamos e recolhemos em Maputo e Matola</span>
+                    {whatsapp && (
+                        <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white">
+                            <MessageCircle className="size-3.5" />
+                            Fale connosco no WhatsApp
+                        </a>
+                    )}
+                </div>
+            </div>
+
+            <header className="bg-background/90 sticky top-0 z-30 border-b backdrop-blur">
+                <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
                     <Link href="/" className="flex items-center gap-3" aria-label={`${nome}, página inicial`}>
-                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-9 w-auto max-w-24 object-contain" />
-                        <span className="hidden flex-col leading-tight sm:flex">
-                            <span className="text-[15px] font-semibold">{nome}</span>
-                            <span className="text-muted-foreground text-[12px]">Lounge e Outdoor</span>
+                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-11 w-auto max-w-28 object-contain" />
+                        <span className="flex flex-col leading-none">
+                            <span className="font-titulo text-[20px] font-medium tracking-[-0.01em]">{nome}</span>
+                            <span className="text-muted-foreground mt-1 text-[10.5px] tracking-[0.18em] uppercase">Lounge e Outdoor</span>
                         </span>
                     </Link>
-                    <nav className="flex items-center gap-1 text-[13.5px]" aria-label="Site">
-                        <Link
-                            href="/catalogo"
-                            className={cn(
-                                'rounded-md px-2.5 py-1.5',
-                                caminho.startsWith('/catalogo') && !caminho.startsWith('/catalogo/reserva')
-                                    ? 'text-foreground font-medium'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            Catálogo
-                        </Link>
-                        <a href="/#contactos" className="text-muted-foreground hover:text-foreground hidden rounded-md px-2.5 py-1.5 sm:inline">
-                            Contactos
-                        </a>
-                        {cliente ? (
-                            <>
-                                {pode('loja.reservar') && (
-                                    <Link
-                                        href="/catalogo/reserva"
-                                        className="hover:bg-muted relative inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5"
-                                        aria-label={`A minha reserva, ${carrinho} peças`}
-                                    >
-                                        <ShoppingBag className="size-4" />
-                                        <span className="hidden sm:inline">Reserva</span>
-                                        {carrinho > 0 && (
-                                            <span className="bg-primary text-primary-foreground min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-medium tabular-nums">
-                                                {carrinho}
-                                            </span>
-                                        )}
-                                    </Link>
+
+                    <nav className="hidden items-center gap-7 text-[14px] lg:flex" aria-label="Site">
+                        {LIGACOES.map((l) => (
+                            <Link
+                                key={l.href}
+                                href={l.href}
+                                className={cn(
+                                    'hover:text-foreground transition-colors',
+                                    activo(l.href) ? 'text-foreground font-medium' : 'text-muted-foreground',
                                 )}
-                                <Link href="/conta" className="hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5">
-                                    <UserRound className="size-4" />
-                                    <span className="hidden sm:inline">{cliente.nome.split(' ')[0]}</span>
-                                </Link>
-                            </>
-                        ) : (
-                            <>
-                                <Link href="/conta/entrar" className="text-muted-foreground hover:text-foreground rounded-md px-2.5 py-1.5">
-                                    Entrar
-                                </Link>
-                                <Link href="/conta/registar" className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 font-medium">
-                                    Criar conta
-                                </Link>
-                            </>
+                            >
+                                {l.label}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    <div className="flex items-center gap-1">
+                        <Link href="/catalogo" className="hover:bg-muted rounded-full p-2.5" aria-label="Procurar no catálogo">
+                            <Search className="size-[18px]" />
+                        </Link>
+                        <Link
+                            href={cliente ? '/conta' : '/conta/entrar'}
+                            className="hover:bg-muted rounded-full p-2.5"
+                            aria-label={cliente ? 'A minha conta' : 'Entrar'}
+                        >
+                            <UserRound className="size-[18px]" />
+                        </Link>
+                        {cliente && pode('loja.reservar') && (
+                            <Link
+                                href="/catalogo/reserva"
+                                className="hover:bg-muted relative rounded-full p-2.5"
+                                aria-label={`A minha reserva, ${carrinho} peças`}
+                            >
+                                <ShoppingBag className="size-[18px]" />
+                                {carrinho > 0 && (
+                                    <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 min-w-[18px] rounded-full px-1 text-center text-[10.5px] leading-[18px] font-semibold tabular-nums">
+                                        {carrinho}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
+                        {!cliente && (
+                            <Link
+                                href="/conta/registar"
+                                className="ml-2 hidden rounded-full bg-[var(--tinta)] px-4 py-2 text-[13px] font-medium text-white md:inline-block"
+                            >
+                                Criar conta
+                            </Link>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setMenu((m) => !m)}
+                            className="hover:bg-muted rounded-full p-2.5 lg:hidden"
+                            aria-label="Menu"
+                            aria-expanded={menu}
+                        >
+                            {menu ? <X className="size-5" /> : <Menu className="size-5" />}
+                        </button>
+                    </div>
+                </div>
+                {menu && (
+                    <nav className="border-t px-4 py-3 lg:hidden" aria-label="Site (telemóvel)">
+                        {LIGACOES.map((l) => (
+                            <Link key={l.href} href={l.href} onClick={() => setMenu(false)} className="block rounded-md px-2 py-2.5 text-[15px]">
+                                {l.label}
+                            </Link>
+                        ))}
+                        {!cliente && (
+                            <Link
+                                href="/conta/registar"
+                                className="mt-2 block rounded-full bg-[var(--tinta)] px-4 py-2.5 text-center text-[14px] font-medium text-white"
+                            >
+                                Criar conta
+                            </Link>
                         )}
                     </nav>
-                </div>
+                )}
             </header>
 
-            <main className={cn('mx-auto w-full flex-1 px-4 md:px-6', largo ? 'max-w-6xl' : 'max-w-5xl')}>{children}</main>
+            <main className="flex-1">{children}</main>
 
             <Rodape />
             <Notificacoes />
@@ -123,46 +189,75 @@ export default function SiteLayout({ titulo, children, largo }: { titulo: string
 }
 
 function Rodape() {
-    const { loja } = useSite();
+    const { loja, cliente } = useSite();
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de informações sobre aluguer.');
     const telefones = [loja?.telefone, loja?.telemovel].filter(Boolean).join(' · ');
+    const coluna = 'grid content-start gap-2.5 text-[14px] text-white/70';
 
     return (
-        <footer id="contactos" className="bg-muted/40 mt-16 border-t">
-            <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-[13.5px] md:grid-cols-3 md:px-6">
+        <footer id="contactos" className="mt-24 bg-[var(--tinta)] text-white">
+            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.3fr] md:px-8">
                 <div>
-                    <p className="text-[15px] font-semibold">{loja?.nome_comercial ?? 'LemServ'}</p>
-                    <p className="text-muted-foreground mt-1">Aluguer de mobiliário lounge, tendas e decoração para eventos.</p>
+                    <p className="font-titulo text-[24px]">{loja?.nome_comercial ?? 'LemServ'}</p>
+                    <p className="mt-3 max-w-xs text-[14px] leading-relaxed text-white/70">
+                        Mobiliário lounge, tendas e decoração para casamentos, aniversários e eventos de empresa. Fabrico próprio.
+                    </p>
                 </div>
-                <ul className="grid gap-2">
+                <div className={coluna}>
+                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Loja</p>
+                    <Link href="/catalogo" className="hover:text-white">
+                        Catálogo
+                    </Link>
+                    <Link href="/#eventos" className="hover:text-white">
+                        Eventos
+                    </Link>
+                    <Link href="/#como-reservar" className="hover:text-white">
+                        Como reservar
+                    </Link>
+                </div>
+                <div className={coluna}>
+                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Conta</p>
+                    {cliente ? (
+                        <Link href="/conta" className="hover:text-white">
+                            A minha conta
+                        </Link>
+                    ) : (
+                        <>
+                            <Link href="/conta/entrar" className="hover:text-white">
+                                Entrar
+                            </Link>
+                            <Link href="/conta/registar" className="hover:text-white">
+                                Criar conta
+                            </Link>
+                        </>
+                    )}
+                </div>
+                <div className={coluna}>
+                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Contactos</p>
                     {telefones && (
-                        <li className="flex items-center gap-2">
-                            <Phone className="text-muted-foreground size-4" />
+                        <span className="flex items-center gap-2">
+                            <Phone className="size-4" />
                             {telefones}
-                        </li>
+                        </span>
                     )}
                     {loja?.email && (
-                        <li className="flex items-center gap-2">
-                            <Mail className="text-muted-foreground size-4" />
-                            <a href={`mailto:${loja.email}`} className="hover:underline">
-                                {loja.email}
-                            </a>
-                        </li>
+                        <a href={`mailto:${loja.email}`} className="flex items-center gap-2 hover:text-white">
+                            <Mail className="size-4" />
+                            {loja.email}
+                        </a>
                     )}
                     {(loja?.morada || loja?.cidade) && (
-                        <li className="flex items-center gap-2">
-                            <MapPin className="text-muted-foreground size-4" />
+                        <span className="flex items-center gap-2">
+                            <MapPin className="size-4" />
                             {[loja?.morada, loja?.cidade].filter(Boolean).join(', ')}
-                        </li>
+                        </span>
                     )}
-                </ul>
-                <div className="md:text-right">
                     {whatsapp && (
                         <a
                             href={whatsapp}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:bg-background inline-flex items-center gap-2 rounded-md border px-3 py-2 font-medium"
+                            className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[var(--tinta)]"
                         >
                             <MessageCircle className="size-4" />
                             Falar no WhatsApp
@@ -170,7 +265,7 @@ function Rodape() {
                     )}
                 </div>
             </div>
-            <p className="text-muted-foreground border-t py-4 text-center text-[12px]">
+            <p className="border-t border-white/10 py-5 text-center text-[12.5px] text-white/50">
                 © {new Date().getFullYear()} {loja?.nome ?? 'LemServ'} · Matola, Moçambique
             </p>
         </footer>

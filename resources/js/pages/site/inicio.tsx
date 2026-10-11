@@ -1,7 +1,8 @@
-import { CartaoProduto, Foto, type ProdutoLoja } from '@/components/site';
+import { CartaoProduto, Etiqueta, EVENTOS, Foto, fotoEvento, TituloSeccao, type ProdutoLoja } from '@/components/site';
 import SiteLayout, { linkWhatsApp, useSite } from '@/layouts/site-layout';
+import { formatNumero } from '@/lib/format';
 import { Link } from '@inertiajs/react';
-import { CalendarCheck, MessageCircle, Search, Truck } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, CalendarCheck, Hammer, MessageCircle, Palette, Search, Truck } from 'lucide-react';
 
 interface Categoria {
     id: number;
@@ -17,86 +18,138 @@ interface Props {
     servicos: { id: number; nome: string; descricao: string | null }[];
 }
 
+const VANTAGENS = [
+    { icone: Hammer, titulo: 'Fabrico próprio', texto: 'O nosso material é feito por nós' },
+    { icone: Truck, titulo: 'Entrega e montagem', texto: 'Levamos, montamos e recolhemos' },
+    { icone: Palette, titulo: 'O seu tema de cores', texto: 'Almofadas e mesas a combinar' },
+    { icone: CalendarCheck, titulo: 'Reserva online', texto: 'Veja o que está livre nas suas datas' },
+];
+
 const PASSOS = [
-    { icone: Search, titulo: 'Escolha no catálogo', texto: 'Veja o material, os preços por dia e o que está livre nas datas do seu evento.' },
-    { icone: CalendarCheck, titulo: 'Peça a reserva', texto: 'Diga as datas, o local e se quer transporte. Fica tudo na sua conta.' },
+    { icone: Search, titulo: 'Escolha no catálogo', texto: 'Veja o material, o preço por dia e o que está livre nas datas do seu evento.' },
+    { icone: CalendarCheck, titulo: 'Peça a reserva', texto: 'Diga as datas, o local e se quer transporte. Fica tudo guardado na sua conta.' },
     { icone: Truck, titulo: 'A LemServ confirma', texto: 'Confirmamos a disponibilidade e a taxa de transporte, entregamos e recolhemos.' },
 ];
+
+// Fotos escolhidas para cada parte da página
+const CAPA = EVENTOS[0];
+const CAPA_PEQUENA = EVENTOS[6];
+const BANNER = EVENTOS[3];
+const GALERIA = [EVENTOS[1], EVENTOS[9], EVENTOS[7], EVENTOS[15], EVENTOS[2], EVENTOS[14], EVENTOS[11], EVENTOS[5]];
 
 /** Página inicial pública da LemServ */
 export default function Inicio({ destaques, categorias, servicos }: Props) {
     const { loja, cliente } = useSite();
-    const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de informações sobre aluguer.');
-    const fotosHero = destaques.filter((d) => d.foto).slice(0, 3);
+    const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de um orçamento para um evento.');
+    const destaque = destaques.find((d) => d.foto) ?? destaques[0];
 
     return (
-        <SiteLayout titulo="LemServ · Lounge e Outdoor" largo>
-            <section className="grid items-center gap-10 py-12 md:grid-cols-[1.1fr_1fr] md:py-16">
+        <SiteLayout titulo="LemServ · Lounge e Outdoor">
+            {/* Capa */}
+            <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 pt-10 pb-16 md:px-8 lg:grid-cols-[1fr_1.05fr] lg:pt-16">
                 <div>
-                    <p className="text-primary mb-3 text-[13px] font-medium">Maputo e Matola</p>
-                    <h1 className="text-[34px] leading-[1.1] font-semibold tracking-[-0.025em] md:text-[44px]">
-                        Lounge e decoração para o seu evento
-                    </h1>
-                    <p className="text-muted-foreground mt-4 max-w-xl text-[16px] leading-relaxed">
-                        Sofás, puffs, tendas e decoração para casamentos, aniversários e eventos de empresa. Fabricamos o nosso próprio material,
-                        entregamos, montamos e recolhemos.
+                    <Etiqueta>Aluguer para eventos · Maputo e Matola</Etiqueta>
+                    <h1 className="font-titulo text-[44px] leading-[1.02] tracking-[-0.02em] md:text-[64px]">Lounge que transforma o seu evento.</h1>
+                    <p className="text-muted-foreground mt-6 max-w-lg text-[16.5px] leading-relaxed">
+                        Sofás, puffs, tendas e decoração para casamentos, aniversários e eventos de empresa. Fabricamos o nosso material e tratamos de
+                        tudo: entrega, montagem e recolha.
                     </p>
-                    <div className="mt-7 flex flex-wrap gap-3">
-                        <Link href="/catalogo" className="bg-primary text-primary-foreground rounded-md px-5 py-2.5 text-[14px] font-medium">
+                    <div className="mt-8 flex flex-wrap gap-3">
+                        <Link
+                            href="/catalogo"
+                            className="inline-flex items-center gap-2 rounded-full bg-[var(--tinta)] px-6 py-3 text-[14px] font-medium text-white"
+                        >
                             Ver o catálogo
+                            <ArrowRight className="size-4" />
                         </Link>
-                        {!cliente && (
-                            <Link href="/conta/registar" className="hover:bg-muted rounded-md border px-5 py-2.5 text-[14px] font-medium">
-                                Criar conta para reservar
-                            </Link>
-                        )}
-                        {cliente && whatsapp && (
-                            <a
-                                href={whatsapp}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:bg-muted inline-flex items-center gap-2 rounded-md border px-5 py-2.5 text-[14px] font-medium"
-                            >
-                                <MessageCircle className="size-4" />
-                                WhatsApp
-                            </a>
-                        )}
+                        <a
+                            href="#eventos"
+                            className="hover:bg-muted inline-flex items-center gap-2 rounded-full border border-[var(--tinta)]/20 px-6 py-3 text-[14px] font-medium"
+                        >
+                            Ver eventos
+                        </a>
                     </div>
-                </div>
-                {fotosHero.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                        {fotosHero.map((p, i) => (
-                            <div
-                                key={p.id}
-                                className={
-                                    i === 0 ? 'col-span-2 aspect-[16/9] overflow-hidden rounded-lg' : 'aspect-square overflow-hidden rounded-lg'
-                                }
-                            >
-                                <Foto src={p.foto} alt={p.nome} />
+                    <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t pt-6 text-[13px]">
+                        {[
+                            ['Fabrico', 'próprio'],
+                            ['Entrega', 'e montagem'],
+                            ['Maputo', 'e Matola'],
+                        ].map(([a, b]) => (
+                            <div key={a}>
+                                <dt className="font-titulo text-[22px]">{a}</dt>
+                                <dd className="text-muted-foreground">{b}</dd>
                             </div>
                         ))}
+                    </dl>
+                </div>
+                <div className="relative">
+                    <div className="aspect-[4/5] overflow-hidden rounded-[28px] lg:aspect-[5/6]">
+                        <img src={fotoEvento(CAPA.n, 'g')} alt={CAPA.alt} className="size-full object-cover" fetchPriority="high" />
                     </div>
-                ) : (
-                    <div className="bg-muted/50 flex aspect-[4/3] items-center justify-center rounded-lg">
-                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-32 w-auto object-contain opacity-80" />
-                    </div>
-                )}
+                    <Link
+                        href="/catalogo"
+                        className="absolute bottom-5 left-5 flex max-w-[260px] items-center gap-3 rounded-2xl bg-white/95 p-2.5 pr-4 shadow-lg backdrop-blur sm:-left-8"
+                    >
+                        <img src={fotoEvento(CAPA_PEQUENA.n)} alt="" className="size-16 rounded-xl object-cover" />
+                        <span className="text-[13px] leading-snug">
+                            <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">Colecção</span>
+                            <span className="font-titulo text-[16px]">Sofás curvos e bouclé</span>
+                        </span>
+                        <ArrowUpRight className="ml-auto size-4 shrink-0" />
+                    </Link>
+                </div>
             </section>
 
+            {/* Vantagens */}
+            <section className="border-y bg-[var(--muted)]/60">
+                <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-8 md:grid-cols-4 md:px-8">
+                    {VANTAGENS.map((v) => (
+                        <li key={v.titulo} className="flex items-start gap-3">
+                            <v.icone className="text-primary mt-0.5 size-5 shrink-0" strokeWidth={1.6} />
+                            <span>
+                                <span className="block text-[14px] font-medium">{v.titulo}</span>
+                                <span className="text-muted-foreground text-[13px]">{v.texto}</span>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+
+            {/* Categorias */}
             {categorias.length > 0 && (
-                <section className="py-8">
-                    <h2 className="mb-5 text-[20px] font-semibold tracking-[-0.015em]">O nosso material</h2>
+                <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                    <TituloSeccao
+                        etiqueta="O nosso material"
+                        titulo="Encontre inspiração para cada evento"
+                        accao={
+                            <Link
+                                href="/catalogo"
+                                className="inline-flex items-center gap-1.5 text-[14px] font-medium underline-offset-4 hover:underline"
+                            >
+                                Ver todo o catálogo
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        }
+                    />
                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {categorias.map((c) => (
-                            <Link key={c.id} href={`/catalogo?categoria=${c.id}`} className="group overflow-hidden rounded-lg border">
-                                <div className="aspect-square overflow-hidden">
-                                    <Foto src={c.foto} alt={c.nome} className="transition-transform duration-300 group-hover:scale-[1.03]" />
-                                </div>
-                                <div className="p-3">
-                                    <p className="text-[14.5px] font-medium">{c.nome}</p>
-                                    <p className="text-muted-foreground text-[12.5px]">
-                                        {c.n} {c.n === 1 ? 'modelo' : 'modelos'}
-                                    </p>
+                        {categorias.slice(0, 4).map((c, i) => (
+                            <Link key={c.id} href={`/catalogo?categoria=${c.id}`} className="group relative aspect-[3/4] overflow-hidden rounded-2xl">
+                                <Foto
+                                    src={c.foto ?? fotoEvento(EVENTOS[(i * 5 + 4) % EVENTOS.length].n)}
+                                    alt={c.nome}
+                                    className="transition-transform duration-500 group-hover:scale-[1.04]"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
+                                <div className="absolute inset-x-4 bottom-4 flex items-end justify-between text-white">
+                                    <span>
+                                        <span className="font-titulo block text-[22px]">{c.nome}</span>
+                                        <span className="text-[12.5px] text-white/80">
+                                            {c.n} {c.n === 1 ? 'modelo' : 'modelos'}
+                                        </span>
+                                    </span>
+                                    <span className="flex size-9 items-center justify-center rounded-full bg-white text-[var(--tinta)]">
+                                        <ArrowUpRight className="size-4" />
+                                    </span>
                                 </div>
                             </Link>
                         ))}
@@ -104,48 +157,156 @@ export default function Inicio({ destaques, categorias, servicos }: Props) {
                 </section>
             )}
 
-            {destaques.length > 0 && (
-                <section className="py-8">
-                    <div className="mb-5 flex items-baseline justify-between gap-4">
-                        <h2 className="text-[20px] font-semibold tracking-[-0.015em]">Em destaque</h2>
-                        <Link href="/catalogo" className="text-muted-foreground hover:text-foreground text-[13.5px]">
-                            Ver tudo
-                        </Link>
+            {/* Produto em destaque */}
+            {destaque && (
+                <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                    <div className="grid overflow-hidden rounded-[28px] bg-[var(--areia)]/60 md:grid-cols-[1fr_1.2fr_1fr]">
+                        <div className="flex flex-col justify-center p-8 md:p-10">
+                            <Etiqueta>Feito por nós</Etiqueta>
+                            <h2 className="font-titulo text-[30px] leading-[1.1]">Material que dá carácter ao espaço</h2>
+                            <p className="text-muted-foreground mt-4 text-[14.5px] leading-relaxed">
+                                Cada peça é fabricada e cuidada pela LemServ, em napa, tecido ou lã, e chega limpa e pronta a montar.
+                            </p>
+                        </div>
+                        <div className="aspect-square md:aspect-auto">
+                            <Foto src={destaque.foto ?? fotoEvento(EVENTOS[12].n, 'g')} alt={destaque.nome} />
+                        </div>
+                        <div className="flex flex-col justify-center gap-3 p-8 md:p-10">
+                            <p className="text-muted-foreground text-[12px] tracking-[0.12em] uppercase">
+                                {[destaque.categoria, destaque.material].filter(Boolean).join(' · ')}
+                            </p>
+                            <p className="font-titulo text-[26px] leading-tight">{destaque.nome}</p>
+                            {destaque.descricao && (
+                                <p className="text-muted-foreground line-clamp-3 text-[14px] leading-relaxed">{destaque.descricao}</p>
+                            )}
+                            {destaque.preco_dia ? (
+                                <p className="text-[18px] font-semibold tabular-nums">
+                                    {formatNumero(destaque.preco_dia)} MT <span className="text-muted-foreground text-[13px] font-normal">/ dia</span>
+                                </p>
+                            ) : (
+                                !cliente && <p className="text-muted-foreground text-[13px]">Entre na sua conta para ver o preço por dia.</p>
+                            )}
+                            <Link
+                                href={`/catalogo/${destaque.id}`}
+                                className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--tinta)] px-5 py-2.5 text-[13.5px] font-medium text-white"
+                            >
+                                Ver a peça
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {destaques.map((p) => (
+                </section>
+            )}
+
+            {/* Mais pedidos */}
+            {destaques.length > 1 && (
+                <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                    <TituloSeccao etiqueta="Em destaque" titulo="Os mais pedidos para eventos" />
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
+                        {destaques.slice(0, 4).map((p) => (
                             <CartaoProduto key={p.id} p={p} />
                         ))}
                     </div>
                 </section>
             )}
 
-            <section className="py-8">
-                <h2 className="mb-5 text-[20px] font-semibold tracking-[-0.015em]">Como reservar</h2>
+            {/* Banner */}
+            <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                <div className="relative overflow-hidden rounded-[28px] bg-[var(--tinta)] text-white">
+                    <img src={fotoEvento(BANNER.n, 'g')} alt={BANNER.alt} className="absolute inset-0 size-full object-cover opacity-55" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--tinta)] via-[var(--tinta)]/70 to-transparent" />
+                    <div className="relative max-w-xl p-8 md:p-14">
+                        <Etiqueta className="text-white/80">Casamentos · Aniversários · Empresas</Etiqueta>
+                        <h2 className="font-titulo text-[34px] leading-[1.08] md:text-[44px]">Do primeiro sofá à última almofada</h2>
+                        <p className="mt-4 text-[15px] leading-relaxed text-white/80">
+                            Diga-nos o local, as datas e o tema de cores. Nós levamos o material, montamos tudo antes do evento e recolhemos no fim.
+                        </p>
+                        <div className="mt-7 flex flex-wrap gap-3">
+                            <Link
+                                href={cliente ? '/catalogo' : '/conta/registar'}
+                                className="rounded-full bg-white px-6 py-3 text-[14px] font-medium text-[var(--tinta)]"
+                            >
+                                {cliente ? 'Escolher no catálogo' : 'Criar conta e reservar'}
+                            </Link>
+                            {whatsapp && (
+                                <a
+                                    href={whatsapp}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-[14px] font-medium"
+                                >
+                                    <MessageCircle className="size-4" />
+                                    Pedir orçamento
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Galeria de eventos */}
+            <section id="eventos" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-20 md:px-8">
+                <TituloSeccao etiqueta="Eventos que montámos" titulo="Cada evento com a sua cara" />
+                <div className="columns-2 gap-4 md:columns-4 [&>*]:mb-4">
+                    {GALERIA.map((f) => (
+                        <figure key={f.n} className="break-inside-avoid overflow-hidden rounded-2xl">
+                            <img
+                                src={fotoEvento(f.n)}
+                                alt={f.alt}
+                                loading="lazy"
+                                className="w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+                            />
+                        </figure>
+                    ))}
+                </div>
+            </section>
+
+            {/* Como reservar */}
+            <section id="como-reservar" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-20 md:px-8">
+                <TituloSeccao etiqueta="Como reservar" titulo="Três passos até ao seu evento" />
                 <ol className="grid gap-4 md:grid-cols-3">
                     {PASSOS.map((p, i) => (
-                        <li key={p.titulo} className="rounded-lg border p-5">
-                            <p.icone className="text-primary mb-3 size-5" />
-                            <p className="text-[14.5px] font-medium">
-                                {i + 1}. {p.titulo}
-                            </p>
-                            <p className="text-muted-foreground mt-1 text-[13.5px] leading-relaxed">{p.texto}</p>
+                        <li key={p.titulo} className="bg-card rounded-2xl border p-7">
+                            <div className="flex items-center justify-between">
+                                <p.icone className="text-primary size-6" strokeWidth={1.6} />
+                                <span className="font-titulo text-muted-foreground text-[34px] leading-none">0{i + 1}</span>
+                            </div>
+                            <p className="font-titulo mt-6 text-[20px]">{p.titulo}</p>
+                            <p className="text-muted-foreground mt-2 text-[14px] leading-relaxed">{p.texto}</p>
                         </li>
                     ))}
                 </ol>
             </section>
 
+            {/* Serviços */}
             {servicos.length > 0 && (
-                <section className="py-8">
-                    <h2 className="mb-5 text-[20px] font-semibold tracking-[-0.015em]">Serviços</h2>
+                <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                    <TituloSeccao etiqueta="Serviços" titulo="Também tratamos de" />
                     <ul className="grid gap-4 md:grid-cols-3">
                         {servicos.map((s) => (
-                            <li key={s.id} className="rounded-lg border p-5">
-                                <p className="text-[14.5px] font-medium">{s.nome}</p>
-                                {s.descricao && <p className="text-muted-foreground mt-1 text-[13.5px] leading-relaxed">{s.descricao}</p>}
+                            <li key={s.id} className="border-t pt-5">
+                                <p className="font-titulo text-[20px]">{s.nome.replace(/\s*\(.*\)$/, '')}</p>
+                                {s.descricao && <p className="text-muted-foreground mt-2 text-[14px] leading-relaxed">{s.descricao}</p>}
                             </li>
                         ))}
                     </ul>
+                </section>
+            )}
+
+            {/* Chamada final */}
+            {!cliente && (
+                <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
+                    <div className="flex flex-col items-start justify-between gap-6 rounded-[28px] bg-[var(--areia)]/70 p-8 md:flex-row md:items-center md:p-12">
+                        <div>
+                            <h2 className="font-titulo text-[30px] leading-tight">Tem um evento em vista?</h2>
+                            <p className="text-muted-foreground mt-2 text-[15px]">
+                                Crie a sua conta para ver os preços, a disponibilidade e pedir a reserva online.
+                            </p>
+                        </div>
+                        <Link href="/conta/registar" className="shrink-0 rounded-full bg-[var(--tinta)] px-6 py-3 text-[14px] font-medium text-white">
+                            Criar conta grátis
+                        </Link>
+                    </div>
                 </section>
             )}
         </SiteLayout>

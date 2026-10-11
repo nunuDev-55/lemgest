@@ -52,9 +52,10 @@ class CatalogoController extends Controller
                 'disponivel' => null,
             ])->pipe(fn (Collection $lista) => $this->comDisponibilidade($lista, $produtos, $this->verPrecos(), $filtros)),
             'filtros' => (object) $filtros,
-            'categorias' => Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
+            // Só as categorias com material na loja (Serviços, por exemplo, não aparece)
+            'categorias' => Categoria::whereIn('id', $this->produtosDaLoja()->select('categoria_id'))->orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
                 ->map(fn (Categoria $c) => ['valor' => (string) $c->id, 'label' => $c->nome]),
-            'materiais' => Material::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
+            'materiais' => Material::whereIn('id', $this->produtosDaLoja()->select('material_id'))->orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
                 ->map(fn (Material $m) => ['valor' => (string) $m->id, 'label' => $m->nome]),
             'podeReservar' => $cliente?->pode('loja.reservar') ?? false,
         ]);
@@ -82,6 +83,11 @@ class CatalogoController extends Controller
             ],
             'filtros' => (object) $filtros,
             'podeReservar' => $cliente?->pode('loja.reservar') ?? false,
+            // Outras peças da mesma categoria (as em destaque primeiro)
+            'relacionados' => $this->produtosDaLoja()->with(['categoria:id,nome', 'material:id,nome', 'fotoPrincipal'])
+                ->where('categoria_id', $p->categoria_id)->whereKeyNot($p->id)
+                ->orderByDesc('loja_destaque')->orderBy('nome')->limit(4)->get()
+                ->map(fn (Produto $r) => $this->cartao($r, $this->verPrecos()))->values(),
         ]);
     }
 

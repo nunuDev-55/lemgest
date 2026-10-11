@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { LogOut } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { useSempreClaro } from './site-layout';
 
 /** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta */
 export interface DadosConta {
@@ -53,14 +54,15 @@ export function ContaEntradaLayout({
     children: ReactNode;
     largo?: boolean;
 }) {
+    useSempreClaro();
     return (
-        <div className="bg-muted flex min-h-svh flex-col items-center justify-center px-4 py-10">
+        <div className="site bg-muted flex min-h-svh flex-col items-center justify-center px-4 py-10">
             <Head title={titulo} />
             <div className={cn('w-full', largo ? 'max-w-[560px]' : 'max-w-[400px]')}>
                 <div className="mb-7 flex flex-col items-center gap-5 text-center">
                     <Marca />
                     <div className="flex flex-col gap-1.5">
-                        <h1 className="text-[22px] font-semibold tracking-[-0.015em]">{titulo}</h1>
+                        <h1 className="font-titulo text-[28px] tracking-[-0.015em]">{titulo}</h1>
                         {descricao && <p className="text-muted-foreground text-[14px]">{descricao}</p>}
                     </div>
                 </div>
@@ -90,13 +92,14 @@ export function useClientePode() {
 
 /** Área do cliente: cabeçalho com a marca e o menu; o conteúdo numa coluna central */
 export default function ContaLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
+    useSempreClaro();
     const { cliente } = usePage<DadosConta>().props;
     const pode = useClientePode();
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
     const activo = (href: string, exacto?: boolean) => (exacto ? caminho === href : caminho === href || caminho.startsWith(`${href}/`));
 
     return (
-        <div className="bg-background flex min-h-svh flex-col">
+        <div className="site bg-background text-foreground flex min-h-svh flex-col">
             <Head title={titulo} />
             <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 md:px-6">

@@ -10,7 +10,7 @@ export default function InicioCliente({ proximas, porPagar }: { proximas: Reserv
 
     return (
         <ContaLayout titulo="A sua conta">
-            <h1 className="mb-1 text-[22px] font-semibold tracking-[-0.015em]">Olá, {primeiroNome}</h1>
+            <h1 className="font-titulo mb-1 text-[28px] tracking-[-0.015em]">Olá, {primeiroNome}</h1>
             <p className="text-muted-foreground mb-7 text-[14px]">
                 Esta é a sua conta na LemServ.
                 {contacto && <> Para qualquer dúvida, fale connosco: {contacto}.</>}

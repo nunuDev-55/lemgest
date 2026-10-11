@@ -56,7 +56,7 @@ export default function DadosCliente({ conta, provincias }: Props) {
 
     return (
         <ContaLayout titulo="Os meus dados">
-            <h1 className="mb-5 text-[22px] font-semibold tracking-[-0.015em]">Os meus dados</h1>
+            <h1 className="font-titulo mb-5 text-[28px] tracking-[-0.015em]">Os meus dados</h1>
 
             <form onSubmit={guardarDados} className="mb-8 grid max-w-2xl gap-4 rounded-lg border p-5 sm:grid-cols-2">
                 <Campo id="nome" rotulo="Nome completo" erro={dados.errors.nome} className="sm:col-span-2">

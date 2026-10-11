@@ -86,7 +86,9 @@ final class Imagem
      */
     private static function endireitar(GdImage $imagem, string $caminho): GdImage
     {
-        $orientacao = function_exists('exif_read_data') ? (int) (@exif_read_data($caminho)['Orientation'] ?? 1) : 1;
+        // Fotos do WhatsApp e capturas de ecrã muitas vezes não trazem EXIF, ou trazem-no sem "Orientation"
+        $exif = function_exists('exif_read_data') ? @exif_read_data($caminho) : false;
+        $orientacao = is_array($exif) ? (int) ($exif['Orientation'] ?? 1) : 1;
 
         // O GD roda no sentido contrário ao dos ponteiros do relógio
         $rodar = match ($orientacao) {

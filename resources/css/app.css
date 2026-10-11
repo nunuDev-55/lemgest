@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/geist';
+@import '@fontsource-variable/fraunces';
 
 @plugin 'tailwindcss-animate';
 
@@ -9,6 +10,8 @@
 
 @theme {
     --font-sans: 'Geist Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    /* Títulos do site público (letra serifada, como nas revistas de interiores) */
+    --font-titulo: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
     --font-mono: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
 
     --radius-lg: var(--radius);
@@ -264,4 +267,27 @@
     .ficha dd {
         @apply min-w-0 break-words;
     }
+}
+
+/*
+ * Site público e catálogo: tons quentes (creme e areia), sempre claros, com a cor ameixa da LemServ.
+ * Só dentro de .site, para não mexer no aspecto do sistema interno.
+ */
+.site {
+    --background: #faf7f2;
+    --foreground: #241c1a;
+    --card: #ffffff;
+    --card-foreground: #241c1a;
+    --muted: #f1ebe3;
+    --muted-foreground: #74685f;
+    --accent: #efe7dc;
+    --accent-foreground: #241c1a;
+    --border: #e6ddd2;
+    --input: #ddd3c7;
+    --ring: #6e2a63;
+    --primary: #6e2a63;
+    --primary-foreground: #ffffff;
+    --areia: #e9dfd2;
+    --tinta: #241c1a;
+    color-scheme: light;
 }

@@ -1,5 +1,5 @@
 import InputError from '@/components/input-error';
-import { CartaoProduto, type ProdutoLoja } from '@/components/site';
+import { CartaoProduto, Etiqueta, type ProdutoLoja } from '@/components/site';
 import SiteLayout, { useSite } from '@/layouts/site-layout';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -16,9 +16,9 @@ interface Props {
     podeReservar: boolean;
 }
 
-const campo = 'border-input bg-background focus-visible:ring-ring h-9 rounded-md border px-2.5 text-[13.5px] outline-none focus-visible:ring-2';
+const campo = 'border-input bg-card focus-visible:ring-ring h-10 rounded-full border px-4 text-[13.5px] outline-none focus-visible:ring-2';
 
-/** Catálogo: fotos para todos; preço e disponibilidade para quem entrou na sua conta */
+/** Catálogo: fotos para todos; preço e disponibilidade para quem entrou na sua conta (e para a equipa) */
 export default function Catalogo({ produtos, filtros, categorias, materiais }: Props) {
     const { cliente, pode, equipa } = useSite();
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
@@ -41,118 +41,130 @@ export default function Catalogo({ produtos, filtros, categorias, materiais }: P
 
     // As datas seguem para a ficha de cada produto
     const sufixo = filtros.de ? `?de=${filtros.de}${filtros.ate ? `&ate=${filtros.ate}` : ''}` : '';
+    const categoriaActual = categorias.find((c) => c.valor === filtros.categoria)?.label;
 
     return (
-        <SiteLayout titulo="Catálogo · LemServ" largo>
-            <div className="py-8">
-                <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Catálogo</h1>
-                <p className="text-muted-foreground mt-1 text-[14.5px]">Material para alugar, fabricado pela LemServ.</p>
+        <SiteLayout titulo="Catálogo · LemServ">
+            <section className="mx-auto max-w-7xl px-4 pt-12 md:px-8">
+                <Etiqueta>Catálogo de aluguer</Etiqueta>
+                <h1 className="font-titulo text-[40px] leading-[1.05] tracking-[-0.02em] md:text-[52px]">
+                    {categoriaActual ?? 'Todo o nosso material'}
+                </h1>
+                <p className="text-muted-foreground mt-3 max-w-xl text-[15.5px] leading-relaxed">
+                    Sofás, puffs, mesas, tendas e decoração, fabricados pela LemServ.
+                    {verPrecos && ' Escolha as datas do evento para ver o que está livre.'}
+                </p>
 
                 {!verPrecos && (
-                    <div className="bg-muted/50 mt-5 flex flex-col gap-3 rounded-lg border p-4 text-[13.5px] sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-[var(--areia)]/70 p-5 text-[14px] sm:flex-row sm:items-center sm:justify-between">
                         <p>Entre na sua conta para ver os preços por dia, a disponibilidade nas suas datas e pedir a reserva.</p>
                         <div className="flex shrink-0 gap-2">
-                            <Link href="/conta/entrar" className="hover:bg-background rounded-md border px-3 py-1.5 font-medium">
+                            <Link href="/conta/entrar" className="rounded-full border border-[var(--tinta)]/20 px-4 py-2 font-medium hover:bg-white">
                                 Entrar
                             </Link>
-                            <Link href="/conta/registar" className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 font-medium">
+                            <Link href="/conta/registar" className="rounded-full bg-[var(--tinta)] px-4 py-2 font-medium text-white">
                                 Criar conta
                             </Link>
                         </div>
                     </div>
                 )}
+            </section>
 
-                <div className="mt-6 flex flex-wrap gap-1.5">
-                    {[{ valor: '', label: 'Tudo' }, ...categorias].map((c) => (
-                        <button
-                            key={c.valor || 'tudo'}
-                            type="button"
-                            onClick={() => ir({ categoria: c.valor || undefined })}
-                            className={cn(
-                                'h-8 rounded-full border px-3.5 text-[13px]',
-                                (filtros.categoria ?? '') === c.valor
-                                    ? 'bg-foreground text-background border-foreground font-medium'
-                                    : 'hover:bg-muted',
-                            )}
-                        >
-                            {c.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-end gap-3">
-                    <label className="relative">
-                        <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
-                        <input
-                            value={pesquisa}
-                            onChange={(e) => setPesquisa(e.target.value)}
-                            placeholder="Procurar…"
-                            aria-label="Procurar no catálogo"
-                            className={cn(campo, 'w-56 pl-8')}
-                        />
-                    </label>
-                    {materiais.length > 0 && (
-                        <select
-                            value={filtros.material ?? ''}
-                            onChange={(e) => ir({ material: e.target.value || undefined })}
-                            aria-label="Material"
-                            className={campo}
-                        >
-                            <option value="">Todos os materiais</option>
-                            {materiais.map((m) => (
-                                <option key={m.valor} value={m.valor}>
-                                    {m.label}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                    {verPrecos && (
-                        <form
-                            className="flex flex-wrap items-end gap-2"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                ir({ de: datas.de || undefined, ate: datas.ate || undefined });
-                            }}
-                        >
-                            <label className="grid gap-1 text-[12px]">
-                                <span className="text-muted-foreground">Do dia</span>
-                                <input
-                                    type="date"
-                                    value={datas.de}
-                                    onChange={(e) => setDatas((d) => ({ ...d, de: e.target.value }))}
-                                    className={campo}
-                                />
-                            </label>
-                            <label className="grid gap-1 text-[12px]">
-                                <span className="text-muted-foreground">Ao dia</span>
-                                <input
-                                    type="date"
-                                    value={datas.ate}
-                                    min={datas.de}
-                                    onChange={(e) => setDatas((d) => ({ ...d, ate: e.target.value }))}
-                                    className={campo}
-                                />
-                            </label>
-                            <button type="submit" className="bg-foreground text-background h-9 rounded-md px-3 text-[13px] font-medium">
-                                Ver disponibilidade
+            {/* Filtros (ficam presos ao topo ao descer) */}
+            <section className="bg-background/95 sticky top-[72px] z-20 mt-8 border-y backdrop-blur">
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 md:px-8">
+                    <div className="flex flex-wrap gap-1.5">
+                        {[{ valor: '', label: 'Tudo' }, ...categorias].map((c) => (
+                            <button
+                                key={c.valor || 'tudo'}
+                                type="button"
+                                onClick={() => ir({ categoria: c.valor || undefined })}
+                                className={cn(
+                                    'h-9 rounded-full px-4 text-[13px] transition-colors',
+                                    (filtros.categoria ?? '') === c.valor
+                                        ? 'bg-[var(--tinta)] font-medium text-white'
+                                        : 'bg-card hover:bg-muted border',
+                                )}
+                            >
+                                {c.label}
                             </button>
-                        </form>
-                    )}
+                        ))}
+                    </div>
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                        {materiais.length > 0 && (
+                            <select
+                                value={filtros.material ?? ''}
+                                onChange={(e) => ir({ material: e.target.value || undefined })}
+                                aria-label="Material"
+                                className={campo}
+                            >
+                                <option value="">Todos os materiais</option>
+                                {materiais.map((m) => (
+                                    <option key={m.valor} value={m.valor}>
+                                        {m.label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <label className="relative">
+                            <Search className="text-muted-foreground absolute top-3 left-3.5 size-4" />
+                            <input
+                                value={pesquisa}
+                                onChange={(e) => setPesquisa(e.target.value)}
+                                placeholder="Procurar…"
+                                aria-label="Procurar no catálogo"
+                                className={cn(campo, 'w-48 pl-9')}
+                            />
+                        </label>
+                    </div>
                 </div>
-                <InputError message={errors.de || errors.ate} className="mt-2" />
+                {verPrecos && (
+                    <form
+                        className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 pb-3 text-[13px] md:px-8"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            ir({ de: datas.de || undefined, ate: datas.ate || undefined });
+                        }}
+                    >
+                        <span className="text-muted-foreground">Datas do evento:</span>
+                        <input
+                            type="date"
+                            aria-label="Do dia"
+                            value={datas.de}
+                            onChange={(e) => setDatas((d) => ({ ...d, de: e.target.value }))}
+                            className={cn(campo, 'h-9')}
+                        />
+                        <span className="text-muted-foreground">a</span>
+                        <input
+                            type="date"
+                            aria-label="Ao dia"
+                            value={datas.ate}
+                            min={datas.de}
+                            onChange={(e) => setDatas((d) => ({ ...d, ate: e.target.value }))}
+                            className={cn(campo, 'h-9')}
+                        />
+                        <button type="submit" className="h-9 rounded-full bg-[var(--tinta)] px-4 font-medium text-white">
+                            Ver disponibilidade
+                        </button>
+                        <InputError message={errors.de || errors.ate} />
+                    </form>
+                )}
+            </section>
 
+            <section className="mx-auto max-w-7xl px-4 pt-8 md:px-8">
+                <p className="text-muted-foreground mb-6 text-[13px]">
+                    {produtos.length} {produtos.length === 1 ? 'peça' : 'peças'}
+                </p>
                 {produtos.length === 0 ? (
-                    <p className="text-muted-foreground mt-10 rounded-lg border px-4 py-12 text-center text-[14px]">
-                        Nada encontrado com estes filtros.
-                    </p>
+                    <p className="text-muted-foreground rounded-2xl border px-4 py-16 text-center text-[14px]">Nada encontrado com estes filtros.</p>
                 ) : (
-                    <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
                         {produtos.map((p) => (
                             <CartaoProduto key={p.id} p={p} sufixo={sufixo} />
                         ))}
                     </div>
                 )}
-            </div>
+            </section>
         </SiteLayout>
     );
 }

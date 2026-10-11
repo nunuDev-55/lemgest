@@ -62,8 +62,8 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
 
     return (
         <SiteLayout titulo="A minha reserva · LemServ">
-            <div className="py-8">
-                <h1 className="text-[26px] font-semibold tracking-[-0.02em]">A minha reserva</h1>
+            <div className="mx-auto max-w-6xl px-4 py-10 md:px-8">
+                <h1 className="font-titulo text-[36px] tracking-[-0.015em]">A minha reserva</h1>
                 <p className="text-muted-foreground mt-1 text-[14px]">
                     O pedido não prende o material: a LemServ confirma a disponibilidade e a taxa de transporte e contacta-o.
                 </p>
@@ -83,7 +83,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                         <div className="grid gap-6">
                             <section>
                                 <h2 className="mb-3 text-[15px] font-semibold">Material</h2>
-                                <ul className="divide-y rounded-lg border">
+                                <ul className="bg-card divide-y rounded-2xl border">
                                     {linhas.map((l) => (
                                         <li key={l.id} className="flex items-center gap-3 p-3">
                                             <Link href={`/catalogo/${l.id}`} className="size-16 shrink-0 overflow-hidden rounded-md">
@@ -228,7 +228,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                             </section>
                         </div>
 
-                        <aside className="bg-muted/40 sticky top-20 rounded-lg border p-5 text-[13.5px]">
+                        <aside className="sticky top-24 rounded-2xl bg-[var(--areia)]/60 p-6 text-[13.5px]">
                             <h2 className="mb-3 text-[15px] font-semibold">Resumo</h2>
                             <dl className="grid gap-2">
                                 <div className="flex justify-between">
@@ -254,7 +254,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                             <button
                                 type="submit"
                                 disabled={form.processing}
-                                className="bg-primary text-primary-foreground mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 font-medium disabled:opacity-60"
+                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--tinta)] px-4 py-3 font-medium text-white disabled:opacity-60"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                                 Enviar pedido de reserva

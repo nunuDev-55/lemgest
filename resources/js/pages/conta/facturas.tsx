@@ -16,7 +16,7 @@ interface Recibo {
 export default function FacturasCliente({ facturas, recibos }: { facturas: Paginado<FacturaCliente>; recibos: Recibo[] }) {
     return (
         <ContaLayout titulo="Facturas e recibos">
-            <h1 className="mb-1 text-[22px] font-semibold tracking-[-0.015em]">Facturas e recibos</h1>
+            <h1 className="font-titulo mb-1 text-[28px] tracking-[-0.015em]">Facturas e recibos</h1>
             <p className="text-muted-foreground mb-5 text-[14px]">
                 A factura diz quanto há a pagar; o recibo prova que pagou. Cada documento abre pronto a imprimir ou a guardar em PDF.
             </p>

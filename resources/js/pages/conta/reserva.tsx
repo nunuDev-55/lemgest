@@ -35,7 +35,7 @@ export default function ReservaCliente({ reserva: r, facturas }: Props) {
                 As minhas reservas
             </Link>
             <div className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <h1 className="text-[22px] font-semibold tracking-[-0.015em]">Reserva {r.numero}</h1>
+                <h1 className="font-titulo text-[28px] tracking-[-0.015em]">Reserva {r.numero}</h1>
                 <EstadoReserva estado={r.estado} atrasada={r.atrasada} />
             </div>
             <p className="text-muted-foreground mb-6 text-[14px]">{EXPLICACAO[r.estado]}</p>
