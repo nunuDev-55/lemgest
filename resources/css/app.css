@@ -1,0 +1,267 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans: 'Geist Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    --font-mono: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Cores da marca (logótipo LemServ: laranja e ameixa) */
+    --color-brand-orange: #f59e2e;
+    --color-brand-plum: #6e2a63;
+    --color-brand-magenta: #d9468f;
+    --color-brand-indigo: #5b6cf0;
+}
+
+/* ------------------------------------------------------------------
+   Visual LemGest: quase tudo neutro (branco, cinzentos, texto escuro);
+   o roxo da LemServ só nas acções principais e no que está activo.
+   Linhas de 1px, cantos pequenos, sem sombras nem gradientes.
+   ------------------------------------------------------------------ */
+:root {
+    --background: #ffffff;
+    --foreground: #111111;
+    --card: #ffffff;
+    --card-foreground: #111111;
+    --popover: #ffffff;
+    --popover-foreground: #111111;
+    --primary: #6e2a63;
+    --primary-foreground: #ffffff;
+    --secondary: #f4f4f4;
+    --secondary-foreground: #111111;
+    --muted: #fafafa;
+    --muted-foreground: #6b6b6b;
+    --accent: #f2f2f2;
+    --accent-foreground: #111111;
+    --destructive: #c4302b;
+    --destructive-foreground: #ffffff;
+    --border: #ebebeb;
+    --input: #dedede;
+    --ring: #6e2a63;
+    --chart-1: #6e2a63;
+    --chart-2: #a3a3a3;
+    --chart-3: #2f6f8e;
+    --chart-4: #b45309;
+    --chart-5: #15803d;
+    --radius: 0.5rem;
+    --sidebar-background: #fafafa;
+    --sidebar-foreground: #3f3f3f;
+    --sidebar-primary: #6e2a63;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #efefef;
+    --sidebar-accent-foreground: #111111;
+    --sidebar-border: #ebebeb;
+    --sidebar-ring: #6e2a63;
+    --linha-suave: #f2f2f2;
+    --sombra: none;
+}
+
+.dark {
+    --background: #0d0d0e;
+    --foreground: #ededed;
+    --card: #0d0d0e;
+    --card-foreground: #ededed;
+    --popover: #161617;
+    --popover-foreground: #ededed;
+    --primary: #ededed;
+    --primary-foreground: #111111;
+    --secondary: #1c1c1e;
+    --secondary-foreground: #ededed;
+    --muted: #141415;
+    --muted-foreground: #9b9b9b;
+    --accent: #1f1f21;
+    --accent-foreground: #ededed;
+    --destructive: #e5534b;
+    --destructive-foreground: #ffffff;
+    --border: #262628;
+    --input: #333336;
+    --ring: #d58bc6;
+    --chart-1: #d58bc6;
+    --chart-2: #6b6b6b;
+    --chart-3: #6aa9c9;
+    --chart-4: #e3a35a;
+    --chart-5: #5fbf85;
+    --sidebar-background: #111112;
+    --sidebar-foreground: #c8c8c8;
+    --sidebar-primary: #ededed;
+    --sidebar-primary-foreground: #111111;
+    --sidebar-accent: #1f1f21;
+    --sidebar-accent-foreground: #ededed;
+    --sidebar-border: #262628;
+    --sidebar-ring: #d58bc6;
+    --linha-suave: #1c1c1e;
+    --sombra: none;
+}
+
+/* ------------------------------------------------------------------
+   Superfícies: caixas com linha fina, sem sombra.
+   (Os nomes 'glass' ficaram do primeiro visual.)
+   ------------------------------------------------------------------ */
+@utility glass {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+}
+
+@utility glass-strong {
+    background-color: var(--popover);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+@utility painel {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+/* Nomes antigos mantidos por compatibilidade; no visual actual são cores lisas */
+@utility text-gradient {
+    color: var(--foreground);
+}
+
+@utility bg-brand-gradient {
+    background-color: var(--color-brand-plum);
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--border);
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    html {
+        background-color: var(--background);
+    }
+
+    body {
+        @apply bg-background text-foreground min-h-svh text-[14px] antialiased;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    ::selection {
+        background: rgba(110, 42, 99, 0.18);
+    }
+}
+
+/* Tabelas: cabeçalho discreto, linhas separadas por uma linha fina, números alinhados */
+@layer components {
+    .tabela {
+        @apply w-full border-collapse text-[13.5px];
+        font-variant-numeric: tabular-nums;
+    }
+    .tabela thead th {
+        @apply text-muted-foreground border-b px-3 py-2.5 text-left text-[12.5px] font-medium whitespace-nowrap;
+    }
+    .tabela thead th:first-child,
+    .tabela tbody td:first-child {
+        @apply pl-4;
+    }
+    .tabela thead th:last-child,
+    .tabela tbody td:last-child {
+        @apply pr-4;
+    }
+    .tabela tbody td {
+        @apply px-3 py-2.5 align-middle;
+        border-bottom: 1px solid var(--linha-suave);
+    }
+    .tabela tbody tr:last-child td {
+        border-bottom: 0;
+    }
+    .tabela tbody tr:hover td {
+        @apply bg-muted;
+    }
+    .tabela tfoot td {
+        @apply border-t;
+    }
+    .tabela .linha-filtros th {
+        @apply px-2 py-2;
+    }
+
+    /* Grelha de células separadas por linhas finas (cada célula desenha a linha à direita e por baixo;
+       as das margens ficam escondidas pela caixa) — os espaços vazios no fim ficam brancos */
+    .grelha-celulas {
+        @apply bg-card overflow-hidden rounded-lg border;
+    }
+    .grelha-celulas > * {
+        box-shadow:
+            1px 0 0 0 var(--border),
+            0 1px 0 0 var(--border);
+    }
+
+    /* Ficha: rótulo à esquerda, valor à direita */
+    .ficha {
+        @apply grid content-start self-start text-[13.5px];
+    }
+    .ficha > div {
+        @apply grid grid-cols-[minmax(9rem,40%)_1fr] gap-3 px-4 py-2.5;
+        border-bottom: 1px solid var(--linha-suave);
+    }
+    .ficha > div:last-child {
+        border-bottom: 0;
+    }
+    .ficha dt {
+        @apply text-muted-foreground;
+    }
+    .ficha dd {
+        @apply min-w-0 break-words;
+    }
+}

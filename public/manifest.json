@@ -1,0 +1,15 @@
+{
+    "name": "LemGest — LemServ",
+    "short_name": "LemGest",
+    "description": "Sistema de gestão da LemServ",
+    "lang": "pt",
+    "start_url": "/painel",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#faf6f9",
+    "theme_color": "#6e2a63",
+    "icons": [
+        { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+        { "src": "/img/lemservices-marca.png", "sizes": "256x256", "type": "image/png" }
+    ]
+}

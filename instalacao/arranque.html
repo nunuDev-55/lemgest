@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LemGest — a iniciar…</title>
+    <link rel="icon" href="../public/favicon-32.png">
+    <!--
+        Ecrã de arranque do LemGest. Abre logo na janela da aplicação (abrir-lemgest.vbs) enquanto
+        o Apache e o MySQL do XAMPP ligam. Vai perguntando ao sistema se já está pronto e, quando está,
+        troca para o LemGest na mesma janela.
+    -->
+    <style>
+        :root {
+            --marca: #6e2a63;
+            --marca-clara: #b0579f;
+            --fundo: #faf6f9;
+            --cartao: #ffffff;
+            --texto: #2a1426;
+            --suave: #7d6879;
+            --linha: #ecdfe9;
+            --ok: #15803d;
+            --erro: #b91c1c;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --marca: #c86bb5;
+                --marca-clara: #e3a3d6;
+                --fundo: #140a12;
+                --cartao: #1e121b;
+                --texto: #f6ecf3;
+                --suave: #b39cae;
+                --linha: #33212f;
+                --ok: #4ade80;
+                --erro: #f87171;
+            }
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(60rem 30rem at 15% 0%, color-mix(in srgb, var(--marca) 14%, transparent), transparent 70%),
+                radial-gradient(50rem 30rem at 100% 100%, color-mix(in srgb, var(--marca-clara) 12%, transparent), transparent 70%),
+                var(--fundo);
+            color: var(--texto);
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            overflow: hidden;
+        }
+        .cartao {
+            width: min(26rem, calc(100vw - 2rem));
+            padding: 2.5rem 2.25rem 1.75rem;
+            background: var(--cartao);
+            border: 1px solid var(--linha);
+            border-radius: 1rem;
+            box-shadow: 0 1.5rem 3.5rem -1.5rem color-mix(in srgb, var(--marca) 35%, transparent);
+            text-align: center;
+            animation: entrar .5s ease-out both;
+        }
+        .borboleta {
+            width: 5.5rem;
+            height: 5.5rem;
+            object-fit: contain;
+            animation: respirar 2.4s ease-in-out infinite;
+        }
+        h1 { margin: .75rem 0 0; font-size: 1.9rem; font-weight: 700; letter-spacing: -.02em; }
+        h1 span { color: var(--marca); }
+        .sub { margin: .25rem 0 0; color: var(--suave); font-size: .9rem; }
+        .demo-etiqueta {
+            display: none;
+            margin: .75rem auto 0;
+            width: fit-content;
+            padding: .15rem .6rem;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #92400e;
+            background: #fef3c7;
+        }
+        .demo .demo-etiqueta { display: block; }
+
+        .barra {
+            position: relative;
+            height: .35rem;
+            margin: 2rem 0 1.5rem;
+            border-radius: 999px;
+            background: var(--linha);
+            overflow: hidden;
+        }
+        .barra > div {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 8%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--marca), var(--marca-clara), var(--marca));
+            background-size: 200% 100%;
+            animation: brilho 1.4s linear infinite;
+            transition: width .6s ease;
+        }
+        .falhou .barra > div { background: var(--erro); animation: none; }
+
+        ol { list-style: none; margin: 0; padding: 0; text-align: left; font-size: .9rem; }
+        li { display: flex; align-items: center; gap: .7rem; padding: .35rem 0; color: var(--suave); transition: color .3s; }
+        li .icone {
+            flex: none;
+            display: grid;
+            place-items: center;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 999px;
+            border: 2px solid var(--linha);
+            font-size: .7rem;
+            font-weight: 700;
+            color: transparent;
+            transition: all .3s;
+        }
+        li.activo { color: var(--texto); font-weight: 600; }
+        li.activo .icone { border-color: var(--marca); border-top-color: transparent; animation: rodar .8s linear infinite; }
+        li.feito { color: var(--texto); }
+        li.feito .icone { border-color: var(--ok); background: var(--ok); color: #fff; }
+        li.feito .icone::after { content: "✓"; }
+        li.erro .icone { border-color: var(--erro); background: var(--erro); color: #fff; animation: none; }
+        li.erro .icone::after { content: "!"; }
+
+        .erro-caixa {
+            display: none;
+            margin-top: 1.25rem;
+            padding: .85rem 1rem;
+            border-radius: .6rem;
+            text-align: left;
+            font-size: .82rem;
+            line-height: 1.45;
+            color: var(--erro);
+            background: color-mix(in srgb, var(--erro) 10%, transparent);
+        }
+        .falhou .erro-caixa { display: block; }
+        button {
+            margin-top: .75rem;
+            padding: .5rem 1rem;
+            border: 0;
+            border-radius: .45rem;
+            font: inherit;
+            font-weight: 600;
+            color: #fff;
+            background: var(--marca);
+            cursor: pointer;
+        }
+        button:hover { filter: brightness(1.08); }
+        footer { margin-top: 1.75rem; font-size: .72rem; color: var(--suave); }
+
+        @keyframes entrar { from { opacity: 0; transform: translateY(.75rem) scale(.98); } }
+        @keyframes respirar { 50% { transform: scale(1.06); } }
+        @keyframes brilho { to { background-position: -200% 0; } }
+        @keyframes rodar { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    </style>
+</head>
+<body>
+    <main class="cartao" aria-live="polite">
+        <img class="borboleta" src="../public/img/lemservices-marca.png" alt="">
+        <h1>Lem<span>Gest</span></h1>
+        <p class="sub">Sistema de gestão · LemServ — Lounge e Outdoor</p>
+        <p class="demo-etiqueta">Demonstração · dados fictícios</p>
+
+        <div class="barra" role="progressbar" aria-label="A iniciar o LemGest"><div id="progresso"></div></div>
+
+        <ol>
+            <li id="passo-0"><span class="icone"></span>A ligar o servidor</li>
+            <li id="passo-1"><span class="icone"></span>A ligar a base de dados</li>
+            <li id="passo-2"><span class="icone"></span>A abrir o LemGest</li>
+        </ol>
+
+        <div class="erro-caixa">
+            <strong>O LemGest não arrancou.</strong><br>
+            Abra o <strong>XAMPP Control Panel</strong> e confirme que o <strong>Apache</strong> e o <strong>MySQL</strong> estão ligados (Start).
+            Depois carregue em “Tentar outra vez”.<br>
+            <button type="button" id="repetir">Tentar outra vez</button>
+        </div>
+
+        <footer>© 2026 Nuryan Sultane · LemGest</footer>
+    </main>
+
+    <script>
+        const parametros = new URLSearchParams(location.search);
+        const porta = parametros.get('porta') === '8089' ? '8089' : '8088';
+        const base = 'http://127.0.0.1:' + porta;
+        if (porta === '8089') {
+            document.body.classList.add('demo');
+            document.title = 'LemGest (demonstração) — a iniciar…';
+        }
+
+        const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+
+        // Pede uma imagem ao sistema: chega quando o servidor (ou a base de dados) já responde
+        function sonda(caminho) {
+            return new Promise((resolver) => {
+                const img = new Image();
+                let feito = false;
+                const fim = (ok) => {
+                    if (feito) return;
+                    feito = true;
+                    img.onload = img.onerror = null;
+                    resolver(ok);
+                };
+                setTimeout(() => fim(false), 3000);
+                img.onload = () => fim(true);
+                img.onerror = () => fim(false);
+                img.src = base + caminho + '?t=' + Date.now();
+            });
+        }
+
+        async function esperar(caminho, ate) {
+            while (Date.now() < ate) {
+                if (await sonda(caminho)) return true;
+                await pausa(600);
+            }
+            return false;
+        }
+
+        function passo(n, estado) {
+            const li = document.getElementById('passo-' + n);
+            li.className = estado;
+        }
+
+        function progresso(percentagem) {
+            document.getElementById('progresso').style.width = percentagem + '%';
+        }
+
+        async function arrancar() {
+            document.body.classList.remove('falhou');
+            [0, 1, 2].forEach((n) => passo(n, ''));
+            const inicio = Date.now();
+            const limite = inicio + 75000;
+
+            passo(0, 'activo');
+            progresso(15);
+            if (!(await esperar('/favicon-32.png', limite))) return falhou(0);
+            passo(0, 'feito');
+
+            passo(1, 'activo');
+            progresso(55);
+            if (!(await esperar('/estado/pronto.png', limite))) return falhou(1);
+            passo(1, 'feito');
+
+            passo(2, 'activo');
+            progresso(90);
+            // Fica pelo menos um instante no ecrã, para não "piscar" quando já estava tudo ligado
+            const resto = 1500 - (Date.now() - inicio);
+            if (resto > 0) await pausa(resto);
+            progresso(100);
+            await pausa(250);
+            location.replace(base + '/painel');
+        }
+
+        function falhou(n) {
+            passo(n, 'erro');
+            document.body.classList.add('falhou');
+        }
+
+        document.getElementById('repetir').addEventListener('click', arrancar);
+        arrancar();
+    </script>
+</body>
+</html>
