@@ -19,6 +19,8 @@ export interface LinhaDocumento {
     taxa_iva: string;
     total_sem_iva: string;
     total: string;
+    /** Linha gerida pelo sistema (taxa de transporte da reserva): muda-se no cabeçalho */
+    fixa?: boolean;
 }
 
 export interface ProdutoVenda {
@@ -106,7 +108,15 @@ export function LinhasDocumento({
                                 {comDias && <td className="text-right tabular-nums">{l.dias ?? 1}</td>}
                                 <td className="text-right tabular-nums">{Number(l.desconto) > 0 ? `${Number(l.desconto)}%` : ''}</td>
                                 <td className="text-right font-medium tabular-nums">{formatNumero(l.total_sem_iva)}</td>
-                                {editavel && (
+                                {editavel && l.fixa && (
+                                    <td
+                                        className="text-muted-foreground text-right text-[12px] whitespace-nowrap"
+                                        title="Muda-se em Modificar, nos campos do transporte"
+                                    >
+                                        automático
+                                    </td>
+                                )}
+                                {editavel && !l.fixa && (
                                     <td className="text-right whitespace-nowrap">
                                         <button
                                             type="button"

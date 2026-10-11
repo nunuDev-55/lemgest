@@ -32,10 +32,32 @@ class ComprasTest extends TestCase
     {
         $s = app(EncomendaFornecedorService::class);
         $e = $s->criar(['terceiro_id' => $this->fornecedor->id, 'data' => now()->toDateString()], $this->admin);
-        $lona = Produto::factory()->create(['referencia' => 'LONA-6X6', 'preco' => '9000.00', 'preco_compra' => '4000.00', 'em_compra' => true]);
+        $lona = Produto::factory()->create(['referencia' => 'LONA-6X6', 'tipo' => Produto::MATERIA, 'preco' => '9000.00', 'preco_compra' => '4000.00', 'em_compra' => true]);
         $s->adicionarLinha($e, ['produto_id' => $lona->id, 'quantidade' => '2']);
 
         return $e->fresh();
+    }
+
+    public function test_so_se_compram_materias_primas(): void
+    {
+        $s = app(EncomendaFornecedorService::class);
+        $e = $s->criar(['terceiro_id' => $this->fornecedor->id, 'data' => now()->toDateString()], $this->admin);
+        $sofa = Produto::factory()->create(['tipo' => 'produto', 'em_compra' => true]);
+
+        // Peças fabricadas não se compram; matérias-primas e linhas livres sim
+        $this->actingAs($this->admin)->post("/encomendas-fornecedor/{$e->id}/linhas", ['produto_id' => $sofa->id, 'quantidade' => '2'])->assertSessionHasErrors('produto_id');
+        $this->actingAs($this->admin)->post('/produtos', [
+            'tipo' => 'materia', 'referencia' => 'NAPA-BR', 'nome' => 'Napa branca (metro)', 'unidade' => 'm', 'taxa_iva' => '16.00',
+            'preco_compra' => '450', 'em_aluguer' => true, 'preco_aluguer' => '10', 'na_loja' => true, 'quantidade_total' => '30',
+        ])->assertSessionHasNoErrors();
+        $napa = Produto::where('referencia', 'NAPA-BR')->firstOrFail();
+        // Uma matéria-prima só se compra: sem aluguer, sem loja e sem peças em stock
+        $this->assertSame([true, false, false, 0, 0], [$napa->em_compra, $napa->em_aluguer, $napa->na_loja, $napa->quantidade_total, $napa->movimentos()->count()]);
+
+        $this->post("/encomendas-fornecedor/{$e->id}/linhas", ['produto_id' => $napa->id, 'quantidade' => '25.5'])->assertSessionHasNoErrors();
+        $this->post("/encomendas-fornecedor/{$e->id}/linhas", ['descricao' => 'Linha de coser', 'quantidade' => '3', 'preco_unitario' => '120', 'taxa_iva' => '16.00'])->assertSessionHasNoErrors();
+        $this->assertSame(2, $e->linhas()->count());
+        $this->get("/encomendas-fornecedor/{$e->id}")->assertInertia(fn (Assert $p) => $p->where('produtos', fn ($produtos) => collect($produtos)->pluck('referencia')->all() === ['NAPA-BR']));
     }
 
     public function test_encomenda_usa_preco_de_compra_e_segue_o_ciclo_ate_a_factura_paga(): void

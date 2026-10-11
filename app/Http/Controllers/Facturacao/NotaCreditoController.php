@@ -82,6 +82,8 @@ class NotaCreditoController extends Controller
     /** "Criar nota de crédito" na ficha da factura */
     public function store(Request $request, Factura $factura): RedirectResponse
     {
+        // A LemServ não usa notas de crédito (config/lemgest.php): para anular uma factura sem pagamentos, "Abandonar"
+        abort_unless(config('lemgest.notas_credito'), 403, 'As notas de crédito estão desligadas. Para anular uma factura sem pagamentos, use "Abandonar".');
         $dados = $request->validate([
             'motivo' => ['required', 'string', 'max:255'],
             'copiar_linhas' => ['boolean'],

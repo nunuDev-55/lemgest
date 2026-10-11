@@ -47,6 +47,8 @@ trait LinhaDeDocumento
             'taxa_iva' => $this->taxa_iva,
             'total_sem_iva' => $this->total_sem_iva,
             'total' => $this->total,
+            // Linha gerida pelo sistema (a taxa de transporte da reserva): não se altera nem apaga à mão
+            'fixa' => (bool) $this->getAttribute('e_transporte'),
         ];
     }
 }

@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,7 +33,7 @@ class ProdutoController extends Controller
     public function index(Request $request): Response
     {
         $filtros = $request->validate([
-            'tipo' => ['nullable', 'in:produto,servico'],
+            'tipo' => ['nullable', Rule::in(array_keys(Produto::TIPOS))],
             'pesquisa' => ['nullable', 'string', 'max:100'],
             'categoria' => ['nullable', 'string', 'max:10'],
             'material' => ['nullable', 'integer'],
@@ -140,7 +141,7 @@ class ProdutoController extends Controller
     {
         return Inertia::render('produtos/formulario', [
             'produto' => null,
-            'tipo' => $request->query('tipo') === 'servico' ? 'servico' : 'produto',
+            'tipo' => array_key_exists((string) $request->query('tipo'), Produto::TIPOS) ? $request->query('tipo') : 'produto',
             'opcoes' => Opcoes::todas(),
             'categorias' => $this->categorias(),
             'materiais' => $this->materiais(),

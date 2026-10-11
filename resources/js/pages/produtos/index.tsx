@@ -27,7 +27,7 @@ type Opcao = { valor: string; label: string };
 interface Linha {
     id: number;
     referencia: string;
-    tipo: 'produto' | 'servico';
+    tipo: 'produto' | 'servico' | 'materia';
     nome: string;
     categoria: string | null;
     material: string | null;
@@ -72,7 +72,8 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
     const lista = useListaFiltros('/produtos', filtros, ordenacao);
     const comStock = resumo !== null;
     const servicos = filtros.tipo === 'servico';
-    const titulo = filtros.tipo === 'produto' ? 'Produtos' : servicos ? 'Serviços' : 'Produtos e stock';
+    const materias = filtros.tipo === 'materia';
+    const titulo = filtros.tipo === 'produto' ? 'Produtos' : servicos ? 'Serviços' : materias ? 'Matérias-primas' : 'Produtos e stock';
     const colunas = comStock ? 6 : 3;
 
     return (
@@ -95,15 +96,15 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
                             </BotaoLink>
                         )}
                         {pode('produtos.gerir') && (
-                            <BotaoLink href={`/produtos/novo?tipo=${servicos ? 'servico' : 'produto'}`} icone={Plus}>
-                                {servicos ? 'Novo serviço' : 'Novo produto'}
+                            <BotaoLink href={`/produtos/novo?tipo=${servicos ? 'servico' : materias ? 'materia' : 'produto'}`} icone={Plus}>
+                                {servicos ? 'Novo serviço' : materias ? 'Nova matéria-prima' : 'Novo produto'}
                             </BotaoLink>
                         )}
                     </>
                 }
             />
 
-            {resumo && !servicos && (
+            {resumo && !servicos && !materias && (
                 <section className="grelha-celulas mb-6 grid grid-cols-2 lg:grid-cols-4">
                     {[
                         { label: 'Peças no total', valor: resumo.pecas, filtro: '' },
@@ -166,6 +167,7 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
                         { valor: undefined, label: 'Todos' },
                         { valor: 'produto', label: 'Produtos' },
                         { valor: 'servico', label: 'Serviços' },
+                        { valor: 'materia', label: 'Matérias-primas' },
                     ].map((t) => (
                         <button
                             key={t.label}
@@ -280,7 +282,11 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
                                                 <span className="line-clamp-1 font-medium group-hover:underline">{p.nome}</span>
                                                 <span className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 text-[12.5px]">
                                                     <span>
-                                                        {[p.referencia, p.categoria ?? (produto ? null : 'Serviço'), p.material]
+                                                        {[
+                                                            p.referencia,
+                                                            p.categoria ?? (produto ? null : p.tipo === 'materia' ? 'Matéria-prima' : 'Serviço'),
+                                                            p.material,
+                                                        ]
                                                             .filter(Boolean)
                                                             .join(' · ')}
                                                     </span>

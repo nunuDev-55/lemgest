@@ -122,6 +122,7 @@ class FacturaController extends Controller
                 ...$this->relacionados('nota_credito', $factura->notasCredito),
             ],
             'notaCredito' => [
+                'activas' => (bool) config('lemgest.notas_credito'),
                 'creditavel' => $creditavel,
                 'rascunho' => $rascunhoNc ? ['id' => $rascunhoNc->id, 'referencia' => $rascunhoNc->referencia()] : null,
                 'motivos' => NotaCredito::MOTIVOS,

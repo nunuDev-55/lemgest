@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Comercial;
 
+use App\Models\Produto;
 use App\Support\Opcoes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,18 +17,20 @@ class GuardarProdutoRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $servico = $this->input('tipo') === 'servico';
+        // Matéria-prima (tecido, napa, espuma...): só se compra; não se aluga, não se vende e não tem peças em stock
+        $materia = $this->input('tipo') === Produto::MATERIA;
 
         $this->merge([
-            'em_venda' => $this->boolean('em_venda'),
-            'em_compra' => $this->boolean('em_compra'),
-            'em_aluguer' => $this->boolean('em_aluguer'),
-            'na_loja' => $this->boolean('na_loja'),
-            'loja_destaque' => $this->boolean('loja_destaque'),
+            'em_venda' => ! $materia && $this->boolean('em_venda'),
+            'em_compra' => $materia || $this->boolean('em_compra'),
+            'em_aluguer' => ! $materia && $this->boolean('em_aluguer'),
+            'na_loja' => ! $materia && $this->boolean('na_loja'),
+            'loja_destaque' => ! $materia && $this->boolean('loja_destaque'),
             'preco' => $this->filled('preco') ? self::numero($this->input('preco')) : null,
             'preco_compra' => $this->filled('preco_compra') ? self::numero($this->input('preco_compra')) : null,
             'preco_aluguer' => $this->filled('preco_aluguer') ? self::numero($this->input('preco_aluguer')) : null,
             // Um serviço não tem quantidade em armazém
-            'quantidade_total' => $servico ? 0 : ($this->filled('quantidade_total') ? self::numero($this->input('quantidade_total')) : 0),
+            'quantidade_total' => $servico || $materia ? 0 : ($this->filled('quantidade_total') ? self::numero($this->input('quantidade_total')) : 0),
             'loja_ordem' => $this->filled('loja_ordem') ? $this->input('loja_ordem') : 0,
             'categoria_id' => $this->filled('categoria_id') ? $this->input('categoria_id') : null,
             'material_id' => $this->filled('material_id') ? $this->input('material_id') : null,
@@ -57,7 +60,7 @@ class GuardarProdutoRequest extends FormRequest
         return [
             // Produto novo com categoria: o código pode ficar vazio e é gerado (SOF-001...)
             'referencia' => [Rule::requiredIf(fn () => $produto !== null || ! $this->filled('categoria_id')), 'nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.\-\/]+$/', Rule::unique('produtos', 'referencia')->ignore($produto?->id)],
-            'tipo' => ['required', Rule::in(['produto', 'servico'])],
+            'tipo' => ['required', Rule::in(array_keys(Produto::TIPOS))],
             'nome' => ['required', 'string', 'max:190'],
             'categoria_id' => ['nullable', 'integer', Rule::exists('categorias', 'id')],
             'material_id' => ['nullable', 'integer', Rule::exists('materiais', 'id')],

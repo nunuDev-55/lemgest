@@ -1,7 +1,7 @@
 import { ListaFacturas, type FacturaCliente, type ReservaCliente } from '@/components/conta';
 import { Campo, Campos, EstadoReserva } from '@/components/erp';
 import { type LinhaDocumento } from '@/components/linhas-documento';
-import { datasEvento } from '@/components/reserva';
+import { datasEvento, textoTransporte } from '@/components/reserva';
 import ContaLayout from '@/layouts/conta-layout';
 import { formatData, formatNumero, formatQuantidade } from '@/lib/format';
 import { Link } from '@inertiajs/react';
@@ -46,7 +46,7 @@ export default function ReservaCliente({ reserva: r, facturas }: Props) {
                 <Campo rotulo="Recolha">{formatData(r.data_recolha)}</Campo>
                 <Campo rotulo="Local">{r.local}</Campo>
                 <Campo rotulo="Contacto no local">{r.contacto_local}</Campo>
-                <Campo rotulo="Transporte">{r.transporte ? 'Sim, a LemServ leva e recolhe' : 'Não, levanta no armazém'}</Campo>
+                <Campo rotulo="Transporte">{textoTransporte(r)}</Campo>
                 <Campo rotulo="Tema de cores">{r.tema}</Campo>
             </Campos>
 

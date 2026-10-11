@@ -176,8 +176,8 @@ export type TipoManual = 'entrada' | 'saida' | 'devolucao' | 'abate' | 'ajuste';
 
 const TITULOS: Record<TipoManual, { titulo: string; descricao: string; botao: string }> = {
     entrada: {
-        titulo: 'Entrada de material',
-        descricao: 'Peças novas que passam a ser da LemServ (compra fora do módulo Compras, oferta…).',
+        titulo: 'Entrada de peças',
+        descricao: 'Peças novas fabricadas pela LemServ (ou recebidas de outra forma). As matérias-primas compradas não entram aqui.',
         botao: 'Registar entrada',
     },
     saida: { titulo: 'Saída para aluguer', descricao: 'Peças que saem do armazém para um cliente ou evento.', botao: 'Registar saída' },
@@ -285,7 +285,7 @@ function FormularioMovimento({
         devolucao_prevista: '',
         terceiro_id: null,
         saida_id: tipo === 'devolucao' || (tipo === 'abate' && saidaInicial) ? (primeiraSaida ? String(primeiraSaida) : '') : '',
-        motivo: '',
+        motivo: tipo === 'entrada' ? 'Fabrico próprio' : '',
     });
     const erroStock = (errors as Record<string, string | undefined>).stock;
     const t = TITULOS[tipo];
@@ -471,7 +471,7 @@ function FormularioMovimento({
                               : tipo === 'ajuste'
                                 ? 'Ex.: contagem de fim de mês'
                                 : tipo === 'entrada'
-                                  ? 'Ex.: compra no mercado Xipamanine'
+                                  ? 'Ex.: Fabrico próprio, lote de Outubro'
                                   : 'Opcional'
                     }
                 />

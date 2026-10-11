@@ -10,6 +10,7 @@ use App\Models\Produto;
 use App\Models\Reserva;
 use App\Models\ReservaLinha;
 use App\Models\User;
+use App\Support\Definicoes;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,8 @@ use Illuminate\Validation\ValidationException;
  */
 class ReservaService extends DocumentoComercialService
 {
+    public const DESCRICAO_TRANSPORTE = 'Transporte (entrega e recolha)';
+
     public function __construct(
         Numeracao $numeracao,
         LinhasDocumento $linhas,
@@ -55,6 +58,7 @@ class ReservaService extends DocumentoComercialService
             $r->origem = $origem;
             $r->criado_por = $autor->id;
             $r->save();
+            $this->sincronizarTransporte($r);
 
             $this->registar($r, 'created', "Reserva {$r->numero} criada (pedido)");
 
@@ -89,6 +93,7 @@ class ReservaService extends DocumentoComercialService
                 }
                 $this->linhas->recalcular($r);
             }
+            $this->sincronizarTransporte($r);
             $this->garantirStockSeConfirmada($r);
 
             return $r;
@@ -111,6 +116,7 @@ class ReservaService extends DocumentoComercialService
     /** @param array<string, mixed> $dados */
     public function actualizarLinha(Model&DocumentoComLinhas $doc, Model $linha, array $dados): Model
     {
+        $this->garantirQueNaoETransporte($linha);
         $this->garantirPecasInteiras($linha->produto_id, $dados['quantidade']);
 
         return DB::transaction(function () use ($doc, $linha, $dados) {
@@ -121,11 +127,23 @@ class ReservaService extends DocumentoComercialService
         });
     }
 
+    public function removerLinha(Model&DocumentoComLinhas $doc, Model $linha): void
+    {
+        $this->garantirQueNaoETransporte($linha);
+        parent::removerLinha($doc, $linha);
+    }
+
     /** Confirmar: a LemServ aceita o pedido e o material fica preso para as datas */
     public function confirmar(Reserva $r, User $quem): Reserva
     {
         $this->garantirEstado($r, [Reserva::PEDIDO], 'Só um pedido pode ser confirmado.');
         $this->garantirLinhas($r);
+        if ($r->transporte && $r->taxa_transporte === null) {
+            $t = app(Definicoes::class)->transporte();
+            throw ValidationException::withMessages([
+                'reserva' => 'Falta a taxa de transporte (de '.number_format((float) $t['minimo'], 0, ',', ' ').' a '.number_format((float) $t['maximo'], 0, ',', ' ').' MT). Modifique a reserva e indique-a antes de confirmar.',
+            ]);
+        }
 
         return DB::transaction(function () use ($r, $quem) {
             $r = Reserva::lockForUpdate()->findOrFail($r->id);
@@ -345,6 +363,51 @@ class ReservaService extends DocumentoComercialService
     }
 
     /* ------------------------------------------------------------ */
+
+    /**
+     * O transporte é um requisito da reserva: com transporte e taxa definida, o sistema mantém uma linha
+     * "Transporte (entrega e recolha)" com essa taxa (1 vez, não por dia), para entrar nos totais e na factura.
+     */
+    private function sincronizarTransporte(Reserva $r): void
+    {
+        $linha = $r->linhas()->where('e_transporte', true)->first();
+
+        if (! $r->transporte || $r->taxa_transporte === null) {
+            if ($linha !== null) {
+                $this->linhas->remover($r, $linha);
+            }
+
+            return;
+        }
+
+        if ($linha === null) {
+            $linha = $this->linhas->adicionar($r, [
+                'descricao' => self::DESCRICAO_TRANSPORTE,
+                'quantidade' => '1',
+                'dias' => 1,
+                'preco_unitario' => (string) $r->taxa_transporte,
+                'taxa_iva' => '16.00',
+            ]);
+            $linha->e_transporte = true;
+            $linha->save();
+        } elseif (bccomp((string) $linha->preco_unitario, (string) $r->taxa_transporte, 2) !== 0) {
+            $this->linhas->actualizar($r, $linha, [
+                'quantidade' => '1',
+                'dias' => 1,
+                'preco_unitario' => (string) $r->taxa_transporte,
+                'taxa_iva' => (string) $linha->taxa_iva,
+            ]);
+        }
+    }
+
+    private function garantirQueNaoETransporte(Model $linha): void
+    {
+        if ($linha instanceof ReservaLinha && $linha->e_transporte) {
+            throw ValidationException::withMessages([
+                'reserva' => 'A linha do transporte muda-se em "Modificar", nos campos Transporte e Taxa de transporte.',
+            ]);
+        }
+    }
 
     protected function garantirRascunho(DocumentoComLinhas $doc): void
     {

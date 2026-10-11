@@ -27,6 +27,7 @@ class FacturacaoPorDiaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['lemgest.notas_credito' => true]);
         $this->gestor = $this->utilizadorComPerfil('Gestor');
         $this->cliente = Terceiro::factory()->create();
         $this->cadeiras = Produto::factory()->create(['referencia' => 'CAD-TIFF', 'em_venda' => false, 'preco' => '0', 'em_aluguer' => true, 'preco_aluguer' => '120.00']);

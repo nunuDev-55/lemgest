@@ -109,6 +109,7 @@ class ReservaController extends Controller
             'reserva' => null,
             'clienteId' => $request->integer('terceiro') ?: null,
             'clientes' => $this->clientesParaSelect(comPotenciais: true),
+            'taxaTransporte' => app(Definicoes::class)->transporte(),
         ]);
     }
 
@@ -165,13 +166,14 @@ class ReservaController extends Controller
             'reserva' => [
                 'id' => $reserva->id,
                 'numero' => $reserva->numero,
-                ...$reserva->only(['terceiro_id', 'dias', 'local', 'contacto_local', 'transporte', 'tema', 'nota_publica', 'nota_privada']),
+                ...$reserva->only(['terceiro_id', 'dias', 'local', 'contacto_local', 'transporte', 'taxa_transporte', 'tema', 'nota_publica', 'nota_privada']),
                 'data_evento' => $reserva->data_evento->toDateString(),
                 'data_fim_evento' => $reserva->data_fim_evento->toDateString(),
                 'data_entrega' => $reserva->data_entrega->toDateString(),
                 'data_recolha' => $reserva->data_recolha->toDateString(),
             ],
             'clientes' => $this->clientesParaSelect(comPotenciais: true),
+            'taxaTransporte' => app(Definicoes::class)->transporte(),
         ]);
     }
 
@@ -305,6 +307,7 @@ class ReservaController extends Controller
             'local' => $r->local,
             'tema' => $r->tema,
             'transporte' => $r->transporte,
+            'taxa_transporte' => $r->taxa_transporte,
             'total' => (string) $r->total,
             'atrasada' => $r->recolhaAtrasada(),
         ];

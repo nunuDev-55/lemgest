@@ -23,6 +23,8 @@ class NotasCreditoTest extends TestCase
     {
         parent::setUp();
         $this->admin = $this->administrador();
+        // A LemServ desligou as notas de crédito; o módulo continua e testa-se ligado
+        config(['lemgest.notas_credito' => true]);
     }
 
     /** Factura validada de 1 160,00 MT: 2 × 500,00 + IVA 16% */
@@ -187,6 +189,16 @@ class NotasCreditoTest extends TestCase
         );
         // Resultados do mês: o facturado desconta a nota
         $this->get('/resultados?periodo=mes')->assertInertia(fn (Assert $p) => $p->where('resumo.facturado', '500.00'));
+    }
+
+    public function test_desligadas_nao_se_criam_e_o_botao_sai(): void
+    {
+        config(['lemgest.notas_credito' => false]);
+        $f = $this->facturaValidada();
+
+        $this->actingAs($this->admin)->get("/facturas/{$f->id}")->assertInertia(fn (Assert $p) => $p->where('notaCredito.activas', false));
+        $this->actingAs($this->admin)->post("/facturas/{$f->id}/nota-credito", ['motivo' => 'Erro'])->assertForbidden();
+        $this->assertDatabaseCount('notas_credito', 0);
     }
 
     public function test_numeracao_das_notas_de_credito_segue_as_datas(): void

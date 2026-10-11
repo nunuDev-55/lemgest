@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Administracao;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Administracao\GuardarEmpresaRequest;
+use App\Http\Requests\Comercial\GuardarProdutoRequest;
 use App\Services\Numeracao;
 use App\Support\Definicoes;
 use App\Support\Opcoes;
@@ -86,25 +87,39 @@ class ConfiguracaoController extends Controller
                 'rodape_orcamento' => $d['documentos.rodape_orcamento'] ?? '',
                 'rodape_encomenda' => $d['documentos.rodape_encomenda'] ?? '',
                 'validade_orcamento' => $this->definicoes->validadeOrcamento(),
+                'transporte_minimo' => $this->definicoes->transporte()['minimo'],
+                'transporte_maximo' => $this->definicoes->transporte()['maximo'],
             ],
         ]);
     }
 
     public function guardarDocumentos(Request $request): RedirectResponse
     {
+        foreach (['transporte_minimo', 'transporte_maximo'] as $campo) {
+            if ($request->filled($campo)) {
+                $request->merge([$campo => GuardarProdutoRequest::numero((string) $request->input($campo))]);
+            }
+        }
         $dados = $request->validate([
             'dados_pagamento' => ['nullable', 'string', 'max:500'],
             'rodape_factura' => ['nullable', 'string', 'max:500'],
             'rodape_orcamento' => ['nullable', 'string', 'max:500'],
             'rodape_encomenda' => ['nullable', 'string', 'max:500'],
             'validade_orcamento' => ['required', 'integer', 'min:1', 'max:365'],
-        ], [], [
+            'transporte_minimo' => ['sometimes', 'required', 'numeric', 'min:0', 'max:1000000'],
+            'transporte_maximo' => ['sometimes', 'required', 'numeric', 'gte:transporte_minimo', 'max:1000000'],
+        ], ['transporte_maximo.gte' => 'O máximo não pode ser menor do que o mínimo.'], [
             'dados_pagamento' => 'dados para pagamento',
             'validade_orcamento' => 'validade dos orçamentos',
+            'transporte_minimo' => 'taxa mínima de transporte',
+            'transporte_maximo' => 'taxa máxima de transporte',
         ]);
 
+        // A taxa de transporte é das reservas; o resto, dos documentos
         $mudaram = $this->definicoes->guardar(
-            collect($dados)->mapWithKeys(fn ($v, $campo) => ["documentos.{$campo}" => $v === null ? null : (string) $v])->all(),
+            collect($dados)->mapWithKeys(fn ($v, $campo) => [
+                (str_starts_with($campo, 'transporte_') ? 'reservas.' : 'documentos.').$campo => $v === null ? null : (string) $v,
+            ])->all(),
         );
         $this->registar($mudaram, 'Textos e opções dos documentos alterados');
 

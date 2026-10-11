@@ -65,10 +65,10 @@ trait DadosDocumento
             ]);
     }
 
-    /** Produtos que se compram, com o preço de compra no lugar do preço (as linhas usam-no por omissão) */
+    /** Matérias-primas que se compram, com o preço de compra no lugar do preço (as linhas usam-no por omissão) */
     protected function produtosEmCompra(): Collection
     {
-        return Produto::where('em_compra', true)->orderBy('referencia')
+        return Produto::where('tipo', Produto::MATERIA)->where('em_compra', true)->orderBy('referencia')
             ->get(['id', 'referencia', 'nome', 'preco_compra', 'taxa_iva', 'unidade', 'tipo'])
             ->map(fn (Produto $p) => [
                 'id' => $p->id,

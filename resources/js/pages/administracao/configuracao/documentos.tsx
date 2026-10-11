@@ -14,6 +14,8 @@ interface Props {
         rodape_orcamento: string;
         rodape_encomenda: string;
         validade_orcamento: number;
+        transporte_minimo: string;
+        transporte_maximo: string;
     };
 }
 
@@ -31,7 +33,7 @@ export default function ConfiguracaoDocumentos({ documentos }: Props) {
         put('/administracao/configuracao/documentos', { preserveScroll: true });
     };
 
-    const texto = (campo: 'dados_pagamento' | 'rodape_factura' | 'rodape_orcamento' | 'rodape_encomenda', linhas = 3) => (
+    const texto = (campo: 'dados_pagamento' | 'rodape_factura' | 'rodape_orcamento', linhas = 3) => (
         <>
             <textarea
                 id={campo}
@@ -52,7 +54,7 @@ export default function ConfiguracaoDocumentos({ documentos }: Props) {
             <TituloPagina
                 icone={FileText}
                 titulo="Documentos"
-                descricao="Textos que aparecem no fim das facturas, orçamentos e encomendas impressos, e opções por omissão."
+                descricao="Textos que aparecem no fim das facturas e orçamentos impressos, e opções por omissão (validade, taxa de transporte)."
             />
 
             <form onSubmit={submeter} className="max-w-5xl space-y-4">
@@ -102,9 +104,34 @@ export default function ConfiguracaoDocumentos({ documentos }: Props) {
                     </LinhaForm>
                 </Bloco>
 
-                <Bloco titulo="Encomendas de venda">
-                    <LinhaForm rotulo="Texto no fim da encomenda" htmlFor="rodape_encomenda">
-                        {texto('rodape_encomenda')}
+                <Bloco titulo="Reservas">
+                    <LinhaForm
+                        rotulo="Taxa de transporte"
+                        htmlFor="transporte_minimo"
+                        obrigatorio
+                        ajuda="Quando o cliente quer transporte, a reserva leva uma taxa dentro deste intervalo, conforme o local. O valor final escolhe-se ao confirmar a reserva."
+                    >
+                        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                            <span className="text-muted-foreground">de</span>
+                            <Input
+                                id="transporte_minimo"
+                                inputMode="decimal"
+                                value={data.transporte_minimo}
+                                onChange={(e) => setData('transporte_minimo', e.target.value)}
+                                className="w-28 text-right"
+                            />
+                            <span className="text-muted-foreground">a</span>
+                            <Input
+                                id="transporte_maximo"
+                                aria-label="Taxa máxima de transporte"
+                                inputMode="decimal"
+                                value={data.transporte_maximo}
+                                onChange={(e) => setData('transporte_maximo', e.target.value)}
+                                className="w-28 text-right"
+                            />
+                            <span className="text-muted-foreground">MT, sem IVA</span>
+                        </div>
+                        <InputError message={errors.transporte_minimo || errors.transporte_maximo} />
                     </LinhaForm>
                 </Bloco>
 

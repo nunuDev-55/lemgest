@@ -173,6 +173,7 @@ class AreaClienteController extends Controller
             'local' => $r->local,
             'tema' => $r->tema,
             'transporte' => $r->transporte,
+            'taxa_transporte' => $r->taxa_transporte,
             'total' => (string) $r->total,
             'atrasada' => $r->recolhaAtrasada(),
         ];

@@ -27,7 +27,7 @@ interface Foto {
 interface Produto {
     id: number;
     referencia: string;
-    tipo: 'produto' | 'servico';
+    tipo: 'produto' | 'servico' | 'materia';
     nome: string;
     categoria: string | null;
     material: string | null;
@@ -87,6 +87,8 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
         return h === 'fotos' || h === 'loja' || (h === 'stock' && stock) ? (h as Separador) : 'ficha';
     });
     const servico = p.tipo === 'servico';
+    const materia = p.tipo === 'materia';
+    const nomeTipo = servico ? 'Serviço' : materia ? 'Matéria-prima' : 'Produto';
     const principal = p.fotos.find((f) => f.principal) ?? null;
     const margem =
         p.preco_compra && Number(p.preco_compra) > 0 && Number(p.preco) > 0
@@ -99,13 +101,14 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
             <CabecalhoFicha
                 referencia={p.referencia}
                 titulo={p.nome}
-                subtitulo={[servico ? 'Serviço' : 'Produto', p.categoria, p.material].filter(Boolean).join(' · ')}
+                subtitulo={[nomeTipo, p.categoria, p.material].filter(Boolean).join(' · ')}
                 estado={
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                         {p.em_aluguer && <Estado cor="verde">Aluguer</Estado>}
                         {p.em_venda && <Estado cor="azul">Venda</Estado>}
                         {p.na_loja && <Estado cor="roxo">Na loja</Estado>}
-                        {!p.em_aluguer && !p.em_venda && <Estado cor="cinza">Inactivo</Estado>}
+                        {materia && <Estado cor="azul">Compra-se</Estado>}
+                        {!materia && !p.em_aluguer && !p.em_venda && <Estado cor="cinza">Inactivo</Estado>}
                     </div>
                 }
                 voltar={{ href: `/produtos?tipo=${p.tipo}` }}
@@ -116,7 +119,7 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
                     { id: 'ficha', label: 'Ficha' },
                     ...(stock ? [{ id: 'stock', label: 'Stock' }] : []),
                     { id: 'fotos', label: 'Fotos', contagem: p.fotos.length },
-                    { id: 'loja', label: 'Loja' },
+                    ...(materia ? [] : [{ id: 'loja', label: 'Loja' }]),
                 ]}
                 activo={separador}
                 onMudar={(id) => {
@@ -146,7 +149,7 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
                         <Campos>
                             <Campo rotulo="Ref.">{p.referencia}</Campo>
                             <Campo rotulo="Nome">{p.nome}</Campo>
-                            <Campo rotulo="Tipo">{servico ? 'Serviço' : 'Produto'}</Campo>
+                            <Campo rotulo="Tipo">{nomeTipo}</Campo>
                             <Campo rotulo="Categoria">{p.categoria}</Campo>
                             {!servico && <Campo rotulo="Material">{p.material}</Campo>}
                             <Campo rotulo="Unidade">{p.unidade}</Campo>

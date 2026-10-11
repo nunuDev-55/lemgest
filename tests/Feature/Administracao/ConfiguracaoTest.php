@@ -137,7 +137,12 @@ class ConfiguracaoTest extends TestCase
             'rodape_orcamento' => 'Válido mediante adjudicação.',
             'rodape_encomenda' => '',
             'validade_orcamento' => 15,
+            'transporte_minimo' => '3 500,00',
+            'transporte_maximo' => '6000',
         ])->assertSessionHasNoErrors();
+        $this->assertSame(['minimo' => '3500.00', 'maximo' => '6000.00'], app(Definicoes::class)->transporte());
+        $this->put('/administracao/configuracao/documentos', ['validade_orcamento' => 15, 'transporte_minimo' => '5000', 'transporte_maximo' => '4000'])
+            ->assertSessionHasErrors('transporte_maximo');
 
         $cliente = Terceiro::factory()->create();
         $this->get("/orcamentos/novo?terceiro={$cliente->id}")

@@ -18,4 +18,11 @@ return [
         'nuit' => env('EMPRESA_NUIT'),
         'banco' => env('EMPRESA_BANCO'),
     ],
+
+    /*
+     * A LemServ decidiu não usar notas de crédito (2026-10-11): o botão e o menu saem,
+     * as notas que já existem continuam a ver-se. Para voltar a criá-las: LEMGEST_NOTAS_CREDITO=true no .env
+     * (e repor a entrada "Notas de crédito" em resources/js/lib/navegacao.ts).
+     */
+    'notas_credito' => (bool) env('LEMGEST_NOTAS_CREDITO', false),
 ];

@@ -9,6 +9,7 @@ use App\Models\Produto;
 use App\Models\Terceiro;
 use App\Models\User;
 use App\Services\EncomendaFornecedorService;
+use App\Services\LinhasDocumento;
 use App\Services\Stock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
@@ -182,10 +183,12 @@ class StockTest extends TestCase
         $fornecedor = Terceiro::factory()->create(['e_cliente' => false, 'e_fornecedor' => true]);
         $servico = app(EncomendaFornecedorService::class);
 
+        // Encomenda antiga (antes de as compras serem só de matérias-primas): ainda dá entrada das peças ao receber
         $e = $servico->criar(['terceiro_id' => $fornecedor->id, 'data' => today()->toDateString()], $this->armazem);
-        $servico->adicionarLinha($e, ['produto_id' => $cadeiras->id, 'quantidade' => '40']);
-        $servico->adicionarLinha($e, ['produto_id' => $transporte->id, 'quantidade' => '1']);
-        $servico->adicionarLinha($e, ['descricao' => 'Tecido (metros)', 'quantidade' => '12.5', 'preco_unitario' => '300']);
+        $linhas = app(LinhasDocumento::class);
+        $linhas->adicionar($e, ['produto_id' => $cadeiras->id, 'quantidade' => '40']);
+        $linhas->adicionar($e, ['produto_id' => $transporte->id, 'quantidade' => '1']);
+        $linhas->adicionar($e, ['descricao' => 'Tecido (metros)', 'quantidade' => '12.5', 'preco_unitario' => '300']);
         $e = $servico->encomendar($servico->validar($e->fresh(), $this->armazem), today()->toDateString(), 'email');
 
         $this->actingAs($this->armazem)->post("/encomendas-fornecedor/{$e->id}/receber")

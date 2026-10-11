@@ -10,11 +10,18 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler, type ReactNode } from 'react';
 
 type Opcao = { valor: string; label: string; detalhe?: string | null };
+type TipoProduto = 'produto' | 'servico' | 'materia';
+
+const TIPOS: { valor: TipoProduto; label: string; ajuda: string }[] = [
+    { valor: 'produto', label: 'Produto', ajuda: 'Peça que a LemServ aluga ou vende (sofá, tenda, mesa…). Tem stock.' },
+    { valor: 'servico', label: 'Serviço', ajuda: 'Montagem, decoração… Não tem stock.' },
+    { valor: 'materia', label: 'Matéria-prima', ajuda: 'O que a LemServ compra para fabricar (tecido, napa, espuma…). Só aparece nas compras.' },
+];
 
 interface Produto {
     id: number;
     referencia: string;
-    tipo: 'produto' | 'servico';
+    tipo: TipoProduto;
     nome: string;
     categoria_id: number | null;
     material_id: number | null;
@@ -37,7 +44,7 @@ interface Produto {
 
 interface Props {
     produto: Produto | null;
-    tipo: 'produto' | 'servico';
+    tipo: TipoProduto;
     opcoes: { taxasIva: Opcao[]; unidades: Opcao[] };
     categorias: Opcao[];
     materiais: Opcao[];
@@ -120,6 +127,7 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
         loja_descricao: p?.loja_descricao ?? '',
     });
     const servico = data.tipo === 'servico';
+    const materia = data.tipo === 'materia';
     const codigoAutomatico = data.categoria_id ? (proximosCodigos[data.categoria_id] ?? null) : null;
     const factorIva = 1 + Number(data.taxa_iva) / 100;
 
@@ -129,7 +137,7 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
         else post('/produtos');
     };
 
-    const titulo = aEditar ? `Modificar ${p.referencia}` : servico ? 'Novo serviço' : 'Novo produto';
+    const titulo = aEditar ? `Modificar ${p.referencia}` : servico ? 'Novo serviço' : materia ? 'Nova matéria-prima' : 'Novo produto';
 
     return (
         <AppLayout>
@@ -139,20 +147,21 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
             <form onSubmit={submeter} className="max-w-4xl">
                 <Seccao titulo="Identificação">
                     <LinhaForm rotulo="Tipo">
-                        <div className="flex gap-5 pt-2 text-[13.5px]">
-                            {(['produto', 'servico'] as const).map((t) => (
-                                <label key={t} className="flex cursor-pointer items-center gap-2">
+                        <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[13.5px]">
+                            {TIPOS.map((t) => (
+                                <label key={t.valor} className="flex cursor-pointer items-center gap-2">
                                     <input
                                         type="radio"
                                         name="tipo"
-                                        checked={data.tipo === t}
-                                        onChange={() => setData('tipo', t)}
+                                        checked={data.tipo === t.valor}
+                                        onChange={() => setData('tipo', t.valor)}
                                         className="accent-[var(--primary)]"
                                     />
-                                    {t === 'produto' ? 'Produto (material)' : 'Serviço'}
+                                    {t.label}
                                 </label>
                             ))}
                         </div>
+                        <p className="text-muted-foreground mt-1 text-[12.5px]">{TIPOS.find((t) => t.valor === data.tipo)?.ajuda}</p>
                     </LinhaForm>
                     <LinhaForm rotulo="Categoria" htmlFor="categoria_id">
                         <div className="flex flex-wrap items-center gap-3">
@@ -264,51 +273,57 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                         </select>
                         <InputError message={errors.taxa_iva} />
                     </LinhaForm>
-                    <LinhaForm rotulo="Aluguer" htmlFor="preco_aluguer" obrigatorio={data.em_aluguer}>
-                        <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
-                            <Checkbox checked={data.em_aluguer} onCheckedChange={(v) => setData('em_aluguer', v === true)} />
-                            Aluga-se
-                        </label>
-                        {data.em_aluguer && (
-                            <CampoPreco
-                                id="preco_aluguer"
-                                valor={data.preco_aluguer}
-                                onChange={(v) => setData('preco_aluguer', v)}
-                                sufixo="MT por dia"
-                                comIva={paraNumero(data.preco_aluguer) * factorIva}
-                            />
-                        )}
-                        <InputError message={errors.preco_aluguer} />
-                    </LinhaForm>
-                    <LinhaForm rotulo="Venda" htmlFor="preco" obrigatorio={data.em_venda}>
-                        <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
-                            <Checkbox checked={data.em_venda} onCheckedChange={(v) => setData('em_venda', v === true)} />
-                            Vende-se
-                        </label>
-                        {data.em_venda && (
-                            <CampoPreco
-                                id="preco"
-                                valor={data.preco}
-                                onChange={(v) => setData('preco', v)}
-                                sufixo={`MT por ${opcoes.unidades.find((u) => u.valor === data.unidade)?.label.toLowerCase() ?? 'unidade'}`}
-                                comIva={paraNumero(data.preco) * factorIva}
-                            />
-                        )}
-                        <InputError message={errors.preco} />
-                    </LinhaForm>
+                    {!materia && (
+                        <>
+                            <LinhaForm rotulo="Aluguer" htmlFor="preco_aluguer" obrigatorio={data.em_aluguer}>
+                                <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
+                                    <Checkbox checked={data.em_aluguer} onCheckedChange={(v) => setData('em_aluguer', v === true)} />
+                                    Aluga-se
+                                </label>
+                                {data.em_aluguer && (
+                                    <CampoPreco
+                                        id="preco_aluguer"
+                                        valor={data.preco_aluguer}
+                                        onChange={(v) => setData('preco_aluguer', v)}
+                                        sufixo="MT por dia"
+                                        comIva={paraNumero(data.preco_aluguer) * factorIva}
+                                    />
+                                )}
+                                <InputError message={errors.preco_aluguer} />
+                            </LinhaForm>
+                            <LinhaForm rotulo="Venda" htmlFor="preco" obrigatorio={data.em_venda}>
+                                <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
+                                    <Checkbox checked={data.em_venda} onCheckedChange={(v) => setData('em_venda', v === true)} />
+                                    Vende-se
+                                </label>
+                                {data.em_venda && (
+                                    <CampoPreco
+                                        id="preco"
+                                        valor={data.preco}
+                                        onChange={(v) => setData('preco', v)}
+                                        sufixo={`MT por ${opcoes.unidades.find((u) => u.valor === data.unidade)?.label.toLowerCase() ?? 'unidade'}`}
+                                        comIva={paraNumero(data.preco) * factorIva}
+                                    />
+                                )}
+                                <InputError message={errors.preco} />
+                            </LinhaForm>
+                        </>
+                    )}
                     <LinhaForm
                         rotulo="Compra"
                         htmlFor="preco_compra"
-                        ajuda="Opcional. Serve para as encomendas a fornecedores e para calcular margens."
+                        ajuda={materia ? 'Preço proposto nas encomendas a fornecedores.' : 'Opcional. Serve para calcular margens.'}
                     >
-                        <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
-                            <Checkbox checked={data.em_compra} onCheckedChange={(v) => setData('em_compra', v === true)} />
-                            Compra-se a fornecedores
-                        </label>
+                        {!materia && (
+                            <label className="mb-2.5 flex w-fit items-center gap-2 pt-2 text-[13.5px]">
+                                <Checkbox checked={data.em_compra} onCheckedChange={(v) => setData('em_compra', v === true)} />
+                                Compra-se a fornecedores
+                            </label>
+                        )}
                         <CampoPreco id="preco_compra" valor={data.preco_compra} onChange={(v) => setData('preco_compra', v)} sufixo="MT" />
                         <InputError message={errors.preco_compra} />
                     </LinhaForm>
-                    {!servico && !aEditar && (
+                    {!servico && !materia && !aEditar && (
                         <LinhaForm
                             rotulo="Quantidade inicial"
                             htmlFor="quantidade_total"
@@ -325,7 +340,7 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                             <InputError message={errors.quantidade_total} />
                         </LinhaForm>
                     )}
-                    {!servico && aEditar && (
+                    {!servico && !materia && aEditar && (
                         <LinhaForm rotulo="Quantidade">
                             <p className="pt-2 text-[13.5px]">
                                 <span className="font-medium tabular-nums">{p.quantidade_total}</span> peça(s)
@@ -341,49 +356,51 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                     )}
                 </Seccao>
 
-                <Seccao titulo="Loja" descricao="O que o cliente vê no site e na loja de aluguer.">
-                    <LinhaForm rotulo="Mostrar na loja">
-                        <div className="flex flex-wrap gap-5 pt-2 text-[13.5px]">
-                            <label className="flex items-center gap-2">
-                                <Checkbox checked={data.na_loja} onCheckedChange={(v) => setData('na_loja', v === true)} />
-                                Mostrar aos clientes
-                            </label>
-                            <label className="flex items-center gap-2">
-                                <Checkbox checked={data.loja_destaque} onCheckedChange={(v) => setData('loja_destaque', v === true)} />
-                                Em destaque
-                            </label>
-                        </div>
-                    </LinhaForm>
-                    <LinhaForm
-                        rotulo="Posição"
-                        htmlFor="loja_ordem"
-                        ajuda="Os números mais baixos aparecem primeiro dentro da categoria. Com 0, segue a ordem do nome."
-                    >
-                        <Input
-                            id="loja_ordem"
-                            value={data.loja_ordem}
-                            onChange={(e) => setData('loja_ordem', e.target.value.replace(/[^\d]/g, ''))}
-                            inputMode="numeric"
-                            className="max-w-28 text-right"
-                        />
-                        <InputError message={errors.loja_ordem} />
-                    </LinhaForm>
-                    <LinhaForm
-                        rotulo="Descrição para o cliente"
-                        htmlFor="loja_descricao"
-                        ajuda="Medidas, cores, material, para quantas pessoas… Se ficar vazia, a loja mostra só o nome."
-                    >
-                        <textarea
-                            id="loja_descricao"
-                            rows={4}
-                            value={data.loja_descricao}
-                            onChange={(e) => setData('loja_descricao', e.target.value)}
-                            className={areaTexto}
-                            maxLength={2000}
-                        />
-                        <InputError message={errors.loja_descricao} />
-                    </LinhaForm>
-                </Seccao>
+                {!materia && (
+                    <Seccao titulo="Loja" descricao="O que o cliente vê no site e na loja de aluguer.">
+                        <LinhaForm rotulo="Mostrar na loja">
+                            <div className="flex flex-wrap gap-5 pt-2 text-[13.5px]">
+                                <label className="flex items-center gap-2">
+                                    <Checkbox checked={data.na_loja} onCheckedChange={(v) => setData('na_loja', v === true)} />
+                                    Mostrar aos clientes
+                                </label>
+                                <label className="flex items-center gap-2">
+                                    <Checkbox checked={data.loja_destaque} onCheckedChange={(v) => setData('loja_destaque', v === true)} />
+                                    Em destaque
+                                </label>
+                            </div>
+                        </LinhaForm>
+                        <LinhaForm
+                            rotulo="Posição"
+                            htmlFor="loja_ordem"
+                            ajuda="Os números mais baixos aparecem primeiro dentro da categoria. Com 0, segue a ordem do nome."
+                        >
+                            <Input
+                                id="loja_ordem"
+                                value={data.loja_ordem}
+                                onChange={(e) => setData('loja_ordem', e.target.value.replace(/[^\d]/g, ''))}
+                                inputMode="numeric"
+                                className="max-w-28 text-right"
+                            />
+                            <InputError message={errors.loja_ordem} />
+                        </LinhaForm>
+                        <LinhaForm
+                            rotulo="Descrição para o cliente"
+                            htmlFor="loja_descricao"
+                            ajuda="Medidas, cores, material, para quantas pessoas… Se ficar vazia, a loja mostra só o nome."
+                        >
+                            <textarea
+                                id="loja_descricao"
+                                rows={4}
+                                value={data.loja_descricao}
+                                onChange={(e) => setData('loja_descricao', e.target.value)}
+                                className={areaTexto}
+                                maxLength={2000}
+                            />
+                            <InputError message={errors.loja_descricao} />
+                        </LinhaForm>
+                    </Seccao>
+                )}
 
                 {!aEditar && <p className="text-muted-foreground mb-4 text-[13px]">As fotos adicionam-se na ficha, depois de criar.</p>}
 

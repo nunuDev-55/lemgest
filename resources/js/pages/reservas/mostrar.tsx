@@ -2,7 +2,7 @@ import { Confirmar } from '@/components/confirmar';
 import { Bloco, CabecalhoFicha, Campo, Campos, Estado, EstadoReserva, ObjectosRelacionados, Separadores, type Relacionado } from '@/components/erp';
 import InputError from '@/components/input-error';
 import { LinhasDocumento, type LinhaDocumento, type ProdutoVenda } from '@/components/linhas-documento';
-import { datasEvento, type ReservaResumo } from '@/components/reserva';
+import { datasEvento, textoTransporte, type ReservaResumo } from '@/components/reserva';
 import { hojeLocal } from '@/components/stock';
 import { TabelaEventos, type Evento } from '@/components/tabela-eventos';
 import { Button } from '@/components/ui/button';
@@ -190,7 +190,7 @@ export default function FichaReserva({ reserva: r, stock, material, produtos, re
                             <Campo rotulo="Entrega">{formatData(r.data_entrega)}</Campo>
                             <Campo rotulo="Recolha">{formatData(r.data_recolha)}</Campo>
                             <Campo rotulo="Dias a cobrar">{r.dias}</Campo>
-                            <Campo rotulo="Transporte">{r.transporte ? 'Sim, a LemServ leva e recolhe' : 'Não (o cliente levanta)'}</Campo>
+                            <Campo rotulo="Transporte">{textoTransporte(r)}</Campo>
                             <Campo rotulo="Tema de cores">{r.tema}</Campo>
                         </Campos>
                         <Campos>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Aluguer;
 
+use App\Support\Definicoes;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,10 @@ class GuardarReservaRequest extends FormRequest
 
         $dados = [
             'transporte' => $this->boolean('transporte'),
+            // Sem transporte não há taxa; com transporte pode ficar por definir até à confirmação
+            'taxa_transporte' => $this->boolean('transporte') && $this->filled('taxa_transporte')
+                ? str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string) $this->input('taxa_transporte'))
+                : null,
             'data_fim_evento' => $fim,
             'data_entrega' => $this->filled('data_entrega') ? $this->input('data_entrega') : $evento,
             'data_recolha' => $this->filled('data_recolha') ? $this->input('data_recolha') : $fim,
@@ -32,6 +37,12 @@ class GuardarReservaRequest extends FormRequest
             $dados['dias'] = max(1, (int) CarbonImmutable::parse($evento)->diffInDays(CarbonImmutable::parse($fim)) + 1);
         }
         $this->merge($dados);
+    }
+
+    /** @return array{minimo: string, maximo: string} */
+    private function transporte(): array
+    {
+        return app(Definicoes::class)->transporte();
     }
 
     /** @return array<string, mixed> */
@@ -47,6 +58,7 @@ class GuardarReservaRequest extends FormRequest
             'local' => ['nullable', 'string', 'max:255'],
             'contacto_local' => ['nullable', 'string', 'max:120'],
             'transporte' => ['boolean'],
+            'taxa_transporte' => ['nullable', 'numeric', 'between:'.$this->transporte()['minimo'].','.$this->transporte()['maximo']],
             'tema' => ['nullable', 'string', 'max:120'],
             'nota_publica' => ['nullable', 'string', 'max:5000'],
             'nota_privada' => ['nullable', 'string', 'max:5000'],
@@ -63,6 +75,7 @@ class GuardarReservaRequest extends FormRequest
             'data_entrega' => 'data de entrega',
             'data_recolha' => 'data de recolha',
             'dias' => 'dias a cobrar',
+            'taxa_transporte' => 'taxa de transporte',
             'contacto_local' => 'contacto no local',
             'nota_publica' => 'observações',
             'nota_privada' => 'nota interna',
@@ -76,6 +89,7 @@ class GuardarReservaRequest extends FormRequest
             'data_fim_evento.after_or_equal' => 'O fim do evento não pode ser antes do início.',
             'data_entrega.before_or_equal' => 'A entrega tem de ser no dia do evento ou antes.',
             'data_recolha.after_or_equal' => 'A recolha tem de ser no último dia do evento ou depois.',
+            'taxa_transporte.between' => 'A taxa de transporte vai de '.number_format((float) $this->transporte()['minimo'], 0, ',', ' ').' a '.number_format((float) $this->transporte()['maximo'], 0, ',', ' ').' MT (Configuração → Documentos).',
         ];
     }
 }

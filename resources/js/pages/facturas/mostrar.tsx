@@ -85,7 +85,8 @@ interface Props {
     eventos: Evento[];
     relacionados: Relacionado[];
     /** Quanto ainda se pode creditar e se já há um rascunho de nota de crédito */
-    notaCredito: { creditavel: string; rascunho: { id: number; referencia: string } | null; motivos: string[] };
+    /** activas: a LemServ pode desligar as notas de crédito (config lemgest.notas_credito) */
+    notaCredito: { activas: boolean; creditavel: string; rascunho: { id: number; referencia: string } | null; motivos: string[] };
     opcoes: { termosPagamento: OpcaoSelect[]; metodosPagamento: OpcaoSelect[] };
 }
 
@@ -103,7 +104,11 @@ export default function FichaFactura({ factura: f, produtos, clientes, eventos, 
     const [separador, setSeparador] = useState(() => new URLSearchParams(window.location.search).get('separador') ?? 'factura');
     const [dialogo, setDialogo] = useState<'validar' | 'apagar' | 'modificar' | 'abandonar' | 'nota_credito' | null>(null);
     const temNotasCredito = relacionados.some((r) => r.tipo === 'nota_credito');
-    const podeCreditar = (f.estado === 'validada' || f.estado === 'paga') && Number(notaCredito.creditavel) > 0 && pode('facturas.criar');
+    const podeCreditar =
+        (notaCredito.activas || notaCredito.rascunho !== null) &&
+        (f.estado === 'validada' || f.estado === 'paga') &&
+        Number(notaCredito.creditavel) > 0 &&
+        pode('facturas.criar');
     const [aProcessar, setAProcessar] = useState(false);
 
     const rascunho = f.estado === 'rascunho';

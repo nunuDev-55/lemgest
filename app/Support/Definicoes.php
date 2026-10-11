@@ -40,6 +40,8 @@ class Definicoes
             'documentos.rodape_orcamento' => 'Orçamento sujeito a confirmação. Para aceitar, assine e devolva este documento ou responda por e-mail/WhatsApp.',
             'documentos.rodape_encomenda' => null,
             'documentos.validade_orcamento' => '30',
+            'reservas.transporte_minimo' => '3000',
+            'reservas.transporte_maximo' => '5000',
         ]);
     }
 
@@ -130,6 +132,15 @@ class Definicoes
     public function validadeOrcamento(): int
     {
         return max(1, (int) $this->obter('documentos.validade_orcamento', '30'));
+    }
+
+    /** @return array{minimo: string, maximo: string} Intervalo da taxa de transporte das reservas (MT, sem IVA) */
+    public function transporte(): array
+    {
+        $minimo = number_format((float) $this->obter('reservas.transporte_minimo', '3000'), 2, '.', '');
+        $maximo = number_format((float) $this->obter('reservas.transporte_maximo', '5000'), 2, '.', '');
+
+        return ['minimo' => $minimo, 'maximo' => max($minimo, $maximo)];
     }
 
     /** Logótipo carregado pela empresa ou, se não houver, o logótipo original da LemServ. */

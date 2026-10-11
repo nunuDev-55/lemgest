@@ -16,6 +16,15 @@ class Produto extends Model
 
     protected $table = 'produtos';
 
+    /** Matéria-prima: o que a LemServ compra para fabricar o seu material (não se aluga nem tem peças em stock) */
+    public const MATERIA = 'materia';
+
+    public const TIPOS = [
+        'produto' => 'Produto',
+        'servico' => 'Serviço',
+        self::MATERIA => 'Matéria-prima',
+    ];
+
     protected $fillable = [
         'referencia', 'tipo', 'nome', 'categoria_id', 'material_id', 'descricao', 'preco', 'taxa_iva', 'unidade',
         'preco_compra', 'em_venda', 'em_compra',

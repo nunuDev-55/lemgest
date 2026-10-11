@@ -39,7 +39,7 @@ class Reserva extends Model implements DocumentoComDias, DocumentoComLinhas
 
     protected $fillable = [
         'terceiro_id', 'data_evento', 'data_fim_evento', 'data_entrega', 'data_recolha', 'dias',
-        'local', 'contacto_local', 'transporte', 'tema', 'nota_publica', 'nota_privada',
+        'local', 'contacto_local', 'transporte', 'taxa_transporte', 'tema', 'nota_publica', 'nota_privada',
     ];
 
     protected function casts(): array
@@ -51,6 +51,7 @@ class Reserva extends Model implements DocumentoComDias, DocumentoComLinhas
             'data_recolha' => 'date',
             'dias' => 'integer',
             'transporte' => 'boolean',
+            'taxa_transporte' => 'decimal:2',
             'confirmada_em' => 'datetime',
             'entregue_em' => 'datetime',
             'devolvida_em' => 'datetime',
@@ -69,7 +70,8 @@ class Reserva extends Model implements DocumentoComDias, DocumentoComLinhas
 
     public function linhas(): HasMany
     {
-        return $this->hasMany(ReservaLinha::class)->orderBy('posicao')->orderBy('id');
+        // A linha do transporte fica sempre no fim
+        return $this->hasMany(ReservaLinha::class)->orderBy('e_transporte')->orderBy('posicao')->orderBy('id');
     }
 
     /** @return BelongsTo<Orcamento, $this> */

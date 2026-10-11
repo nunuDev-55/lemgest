@@ -209,6 +209,44 @@ class ReservasTest extends TestCase
         $this->assertSame(100, $this->livres(30, 30));
     }
 
+    public function test_transporte_e_requisito_da_reserva_com_taxa(): void
+    {
+        $base = ['terceiro_id' => $this->cliente->id, 'data_evento' => $this->dia(30), 'data_fim_evento' => $this->dia(31)];
+        // Fora do intervalo (3 000 a 5 000 MT por omissão) não aceita
+        $this->actingAs($this->comercial)->post('/reservas', [...$base, 'transporte' => true, 'taxa_transporte' => '2500'])->assertSessionHasErrors('taxa_transporte');
+
+        // Pedido com transporte e taxa por definir: ainda não há linha, e não se confirma
+        $this->actingAs($this->comercial)->post('/reservas', [...$base, 'transporte' => true])->assertSessionHasNoErrors();
+        $r = Reserva::latest('id')->firstOrFail();
+        $this->linha($r, ['produto_id' => $this->cadeiras->id, 'quantidade' => '10'])->assertSessionHasNoErrors();
+        $this->assertSame(0, $r->linhas()->where('e_transporte', true)->count());
+        $this->actingAs($this->comercial)->post("/reservas/{$r->id}/confirmar")->assertSessionHasErrors('reserva');
+
+        // Com a taxa: uma linha de transporte (1 vez, não por dia), sempre no fim, que entra nos totais
+        $this->actingAs($this->comercial)->put("/reservas/{$r->id}", [...$base, 'transporte' => true, 'taxa_transporte' => '3 500,00'])->assertSessionHasNoErrors();
+        $r->refresh();
+        $transporte = $r->linhas()->where('e_transporte', true)->firstOrFail();
+        $this->assertSame(['3500.00', 1, '3500.00'], [(string) $transporte->preco_unitario, $transporte->dias, (string) $transporte->total_sem_iva]);
+        $this->assertSame('5900.00', (string) $r->total_sem_iva); // 10 cadeiras × 2 dias × 120 + 3 500
+        $this->linha($r, ['produto_id' => $this->cadeiras->id, 'quantidade' => '2'])->assertSessionHasNoErrors();
+        $this->assertTrue($r->linhas()->get()->last()->e_transporte);
+
+        // Não se altera nem apaga à mão; muda-se no cabeçalho
+        $this->actingAs($this->comercial)->delete("/reservas/{$r->id}/linhas/{$transporte->id}")->assertSessionHasErrors('reserva');
+        $this->actingAs($this->comercial)->put("/reservas/{$r->id}", [...$base, 'transporte' => true, 'taxa_transporte' => '5000'])->assertSessionHasNoErrors();
+        $this->assertSame('5000.00', (string) $transporte->fresh()->preco_unitario);
+
+        $this->actingAs($this->comercial)->post("/reservas/{$r->id}/confirmar")->assertSessionHasNoErrors();
+        $this->actingAs($this->comercial)->get("/reservas/{$r->id}")->assertInertia(fn (Assert $p) => $p
+            ->where('reserva.taxa_transporte', '5000.00')
+            ->where('reserva.linhas', fn ($linhas) => collect($linhas)->last()['fixa'] === true));
+
+        // Sem transporte, a linha sai (numa reserva confirmada ainda se pode mudar)
+        $this->actingAs($this->comercial)->put("/reservas/{$r->id}", [...$base, 'transporte' => false, 'taxa_transporte' => '5000'])->assertSessionHasNoErrors();
+        $this->assertSame(0, $r->linhas()->where('e_transporte', true)->count());
+        $this->assertNull($r->fresh()->taxa_transporte);
+    }
+
     public function test_permissoes(): void
     {
         $r = $this->reserva(10, 30, 30);
@@ -231,7 +269,7 @@ class ReservasTest extends TestCase
 
     public function test_paginas_calendario_lista_e_produto(): void
     {
-        $r = $this->reserva(80, 30, 31, ['local' => 'Salão Polana', 'tema' => 'Branco e dourado', 'transporte' => true]);
+        $r = $this->reserva(80, 30, 31, ['local' => 'Salão Polana', 'tema' => 'Branco e dourado', 'transporte' => true, 'taxa_transporte' => '4000']);
         $this->actingAs($this->comercial)->post("/reservas/{$r->id}/confirmar");
         $outra = $this->reserva(5, 2, 2);
 
@@ -241,7 +279,7 @@ class ReservasTest extends TestCase
         $this->actingAs($this->comercial)->get('/reservas/nova')->assertInertia(fn (Assert $pg) => $pg->component('reservas/formulario'));
         $this->actingAs($this->comercial)->get("/reservas/{$r->id}/editar")->assertInertia(fn (Assert $pg) => $pg->where('reserva.tema', 'Branco e dourado'));
         $this->actingAs($this->comercial)->get("/reservas/{$r->id}")->assertInertia(fn (Assert $pg) => $pg
-            ->component('reservas/mostrar')->where('reserva.transporte', true)->has('reserva.linhas', 2)->has('produtos'));
+            ->component('reservas/mostrar')->where('reserva.transporte', true)->has('reserva.linhas', 3)->has('produtos'));
 
         $mes = today()->addDays(30)->format('Y-m');
         $this->actingAs($this->comercial)->get("/reservas/calendario?mes={$mes}")->assertInertia(fn (Assert $pg) => $pg

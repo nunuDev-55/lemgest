@@ -74,7 +74,6 @@ export const NAVEGACAO: GrupoNav[] = [
                 prefixos: ['/facturas', '/notas-credito', '/pagamentos'],
                 subitens: [
                     { label: 'Facturas', href: '/facturas', permissao: 'facturas.ver' },
-                    { label: 'Notas de crédito', href: '/notas-credito', permissao: 'facturas.ver' },
                     { label: 'Pagamentos recebidos', href: '/pagamentos', permissao: 'pagamentos.ver' },
                 ],
             },

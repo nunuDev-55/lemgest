@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\DocumentoComLinhas;
+use App\Models\Produto;
 use App\Models\Terceiro;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +29,12 @@ abstract class DocumentoCompraService
     public function adicionarLinha(Model&DocumentoComLinhas $doc, array $dados): Model
     {
         $this->garantirRascunho($doc);
+        // A LemServ fabrica o seu material: nas compras só entram matérias-primas (ou linhas livres)
+        if (! empty($dados['produto_id']) && Produto::whereKey($dados['produto_id'])->value('tipo') !== Produto::MATERIA) {
+            throw ValidationException::withMessages([
+                'produto_id' => 'Nas compras só entram matérias-primas (tecido, napa, espuma…). As peças fabricadas entram no stock como "Entrada".',
+            ]);
+        }
 
         return $this->linhas->adicionar($doc, $dados);
     }

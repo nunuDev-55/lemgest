@@ -25,6 +25,11 @@ class ReservaLinha extends Model
         return $this->belongsTo(MovimentoStock::class, 'movimento_saida_id');
     }
 
+    protected function casts(): array
+    {
+        return ['e_transporte' => 'boolean'];
+    }
+
     /** Linha de material com stock (produto, não serviço) */
     public function temStock(): bool
     {

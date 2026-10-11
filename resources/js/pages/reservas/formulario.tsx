@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumero } from '@/lib/format';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronLeft, LoaderCircle, UserPlus } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
@@ -27,6 +28,7 @@ interface Reserva {
     local: string | null;
     contacto_local: string | null;
     transporte: boolean;
+    taxa_transporte: string | null;
     tema: string | null;
     nota_publica: string | null;
     nota_privada: string | null;
@@ -42,6 +44,7 @@ type Dados = {
     local: string;
     contacto_local: string;
     transporte: boolean;
+    taxa_transporte: string;
     tema: string;
     nota_publica: string;
     nota_privada: string;
@@ -68,10 +71,13 @@ export default function FormularioReserva({
     reserva: r,
     clientes,
     clienteId,
+    taxaTransporte,
 }: {
     reserva: Reserva | null;
     clientes: Cliente[];
     clienteId?: number | null;
+    /** Intervalo da taxa (Configuração → Documentos) */
+    taxaTransporte: { minimo: string; maximo: string };
 }) {
     const aEditar = r !== null;
     const [diasManuais, setDiasManuais] = useState(aEditar && r.dias !== diasEntre(r.data_evento, r.data_fim_evento));
@@ -85,6 +91,7 @@ export default function FormularioReserva({
         local: r?.local ?? '',
         contacto_local: r?.contacto_local ?? '',
         transporte: r?.transporte ?? false,
+        taxa_transporte: r?.taxa_transporte ?? '',
         tema: r?.tema ?? '',
         nota_publica: r?.nota_publica ?? '',
         nota_privada: r?.nota_privada ?? '',
@@ -232,6 +239,26 @@ export default function FormularioReserva({
                             o material
                         </label>
                     </LinhaForm>
+                    {data.transporte && (
+                        <LinhaForm
+                            rotulo="Taxa de transporte"
+                            htmlFor="taxa_transporte"
+                            ajuda={`De ${formatNumero(taxaTransporte.minimo)} a ${formatNumero(taxaTransporte.maximo)} MT, conforme o local. Pode ficar vazia até confirmar a reserva; entra nos totais como uma linha própria.`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    id="taxa_transporte"
+                                    inputMode="decimal"
+                                    value={data.taxa_transporte}
+                                    onChange={(e) => setData('taxa_transporte', e.target.value)}
+                                    placeholder={formatNumero(taxaTransporte.minimo)}
+                                    className="w-32 text-right"
+                                />
+                                <span className="text-muted-foreground text-[13px]">MT, sem IVA</span>
+                            </div>
+                            <InputError message={errors.taxa_transporte} />
+                        </LinhaForm>
+                    )}
                     <LinhaForm rotulo="Tema de cores" htmlFor="tema">
                         <Input
                             id="tema"
