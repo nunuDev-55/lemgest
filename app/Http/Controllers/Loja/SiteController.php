@@ -15,7 +15,7 @@ class SiteController extends Controller
 
     public function inicio(): Response
     {
-        $comPreco = $this->clienteDoCatalogo() !== null;
+        $comPreco = $this->verPrecos();
         $base = fn () => $this->produtosDaLoja()->with(['categoria:id,nome', 'material:id,nome', 'fotoPrincipal']);
 
         return Inertia::render('site/inicio', [

@@ -18,6 +18,8 @@ export interface DadosSite {
         logotipo: string;
     } | null;
     carrinho: number;
+    /** Alguém da equipa a ver a loja a partir do LemGest (vê os preços, não reserva) */
+    equipa: { nome: string } | null;
     [key: string]: unknown;
 }
 
@@ -37,13 +39,21 @@ export function useSite() {
 
 /** Site público e catálogo: cabeçalho com a marca, o catálogo e a conta; rodapé com os contactos */
 export default function SiteLayout({ titulo, children, largo }: { titulo: string; children: ReactNode; largo?: boolean }) {
-    const { loja, cliente, carrinho, pode } = useSite();
+    const { loja, cliente, carrinho, pode, equipa } = useSite();
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
     const nome = loja?.nome_comercial ?? 'LemServ';
 
     return (
         <div className="bg-background text-foreground flex min-h-svh flex-col">
             <Head title={titulo} />
+            {equipa && !cliente && (
+                <div className="bg-foreground text-background px-4 py-1.5 text-center text-[12.5px]">
+                    Está a ver a loja como equipa ({equipa.nome}): vê os preços e a disponibilidade como um cliente.{' '}
+                    <a href="/painel" className="font-medium underline underline-offset-2">
+                        Voltar ao LemGest
+                    </a>
+                </div>
+            )}
             <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
                     <Link href="/" className="flex items-center gap-3" aria-label={`${nome}, página inicial`}>

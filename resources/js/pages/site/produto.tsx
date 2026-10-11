@@ -16,7 +16,7 @@ interface Props {
 const campo = 'border-input bg-background focus-visible:ring-ring h-9 rounded-md border px-2.5 text-[13.5px] outline-none focus-visible:ring-2';
 
 export default function ProdutoSite({ produto: p, filtros, podeReservar }: Props) {
-    const { cliente } = useSite();
+    const { cliente, equipa } = useSite();
     const [activa, setActiva] = useState(0);
     const [datas, setDatas] = useState({ de: filtros.de ?? '', ate: filtros.ate ?? '' });
     const form = useForm({ produto_id: p.id, quantidade: '1' });
@@ -134,7 +134,8 @@ export default function ProdutoSite({ produto: p, filtros, podeReservar }: Props
                                 <InputError message={form.errors.quantidade} className="mt-2" />
                             </div>
                         ) : (
-                            !cliente && (
+                            !cliente &&
+                            !equipa && (
                                 <div className="bg-muted/50 mt-6 rounded-lg border p-4 text-[13.5px]">
                                     <p>Para ver o preço por dia e pedir a reserva, entre na sua conta.</p>
                                     <div className="mt-3 flex gap-2">

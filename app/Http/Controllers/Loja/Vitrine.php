@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Loja;
 use App\Models\ContaCliente;
 use App\Models\Produto;
 use App\Models\ProdutoFoto;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,6 +30,20 @@ trait Vitrine
         $conta = Auth::guard('cliente')->user();
 
         return $conta instanceof ContaCliente && $conta->activa() && $conta->pode('loja.catalogo') ? $conta : null;
+    }
+
+    /** Alguém da equipa, com sessão aberta no LemGest e "Ver a loja" (o Administrador tem sempre) */
+    protected function equipaNaLoja(): ?User
+    {
+        $u = Auth::guard('web')->user();
+
+        return $u instanceof User && $u->active && $u->can('loja.ver') ? $u : null;
+    }
+
+    /** Preços e disponibilidade: clientes com "Ver o catálogo" e a equipa com "Ver a loja" */
+    protected function verPrecos(): bool
+    {
+        return $this->clienteDoCatalogo() !== null || $this->equipaNaLoja() !== null;
     }
 
     /** @return array<string, mixed> */

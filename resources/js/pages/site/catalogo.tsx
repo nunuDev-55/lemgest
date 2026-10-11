@@ -20,9 +20,9 @@ const campo = 'border-input bg-background focus-visible:ring-ring h-9 rounded-md
 
 /** Catálogo: fotos para todos; preço e disponibilidade para quem entrou na sua conta */
 export default function Catalogo({ produtos, filtros, categorias, materiais }: Props) {
-    const { cliente, pode } = useSite();
+    const { cliente, pode, equipa } = useSite();
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
-    const verPrecos = cliente !== null && pode('loja.catalogo');
+    const verPrecos = (cliente !== null && pode('loja.catalogo')) || equipa !== null;
     const [pesquisa, setPesquisa] = useState(filtros.pesquisa ?? '');
     const [datas, setDatas] = useState({ de: filtros.de ?? '', ate: filtros.ate ?? '' });
 

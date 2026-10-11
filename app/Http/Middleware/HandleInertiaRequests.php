@@ -69,6 +69,8 @@ class HandleInertiaRequests extends Middleware
             'loja' => fn () => Publico::caminho($request)
                 ? Arr::only(app(Definicoes::class)->empresa(), ['nome', 'nome_comercial', 'telemovel', 'telefone', 'email', 'morada', 'cidade', 'logotipo'])
                 : null,
+            // Equipa a ver a loja a partir do LemGest (botão "Ver a loja")
+            'equipa' => fn () => Publico::caminho($request) && $user?->active && $user->can('loja.ver') ? ['nome' => $user->name] : null,
             'carrinho' => fn () => Publico::caminho($request) ? PedidoController::pecasNoCarrinho($request) : 0,
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),

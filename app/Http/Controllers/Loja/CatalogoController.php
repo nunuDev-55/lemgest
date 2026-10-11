@@ -48,9 +48,9 @@ class CatalogoController extends Controller
 
         return Inertia::render('site/catalogo', [
             'produtos' => $produtos->map(fn (Produto $p) => [
-                ...$this->cartao($p, $cliente !== null),
+                ...$this->cartao($p, $this->verPrecos()),
                 'disponivel' => null,
-            ])->pipe(fn (Collection $lista) => $this->comDisponibilidade($lista, $produtos, $cliente !== null, $filtros)),
+            ])->pipe(fn (Collection $lista) => $this->comDisponibilidade($lista, $produtos, $this->verPrecos(), $filtros)),
             'filtros' => (object) $filtros,
             'categorias' => Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
                 ->map(fn (Categoria $c) => ['valor' => (string) $c->id, 'label' => $c->nome]),
@@ -68,7 +68,7 @@ class CatalogoController extends Controller
             'ate' => ['nullable', 'date', 'after_or_equal:de'],
         ]);
         $cliente = $this->clienteDoCatalogo();
-        $cartao = $this->comDisponibilidade(collect([$this->cartao($p, $cliente !== null)]), collect([$p]), $cliente !== null, $filtros)->first();
+        $cartao = $this->comDisponibilidade(collect([$this->cartao($p, $this->verPrecos())]), collect([$p]), $this->verPrecos(), $filtros)->first();
 
         return Inertia::render('site/produto', [
             'produto' => [
@@ -100,16 +100,16 @@ class CatalogoController extends Controller
     }
 
     /**
-     * Peças livres nas datas escolhidas (só para clientes com sessão).
+     * Peças livres nas datas escolhidas (só para clientes com sessão e para a equipa).
      *
      * @param  Collection<int, array<string, mixed>>  $cartoes
      * @param  Collection<int, Produto>  $produtos
      * @param  array<string, mixed>  $filtros
      * @return Collection<int, array<string, mixed>>
      */
-    private function comDisponibilidade(Collection $cartoes, Collection $produtos, bool $cliente, array $filtros): Collection
+    private function comDisponibilidade(Collection $cartoes, Collection $produtos, bool $verPrecos, array $filtros): Collection
     {
-        if (! $cliente || empty($filtros['de']) || $produtos->isEmpty()) {
+        if (! $verPrecos || empty($filtros['de']) || $produtos->isEmpty()) {
             return $cartoes;
         }
         $contas = app(Disponibilidade::class)->noPeriodo(

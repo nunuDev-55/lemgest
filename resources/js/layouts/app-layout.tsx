@@ -11,7 +11,7 @@ import { itemActivo, NAVEGACAO, subItemActivo } from '@/lib/navegacao';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronsUpDown, Menu, Search } from 'lucide-react';
+import { ChevronsUpDown, ExternalLink, Menu, Search, Store } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 interface Props {
@@ -152,6 +152,19 @@ function MenuLateral() {
             </nav>
 
             <div className="shrink-0 border-t p-2.5">
+                {pode('loja.ver') && (
+                    <a
+                        href="/catalogo"
+                        target="_blank"
+                        rel="noopener"
+                        className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent mb-1 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px]"
+                        title="Abre o site e o catálogo noutro separador, com os preços como um cliente os vê"
+                    >
+                        <Store className="size-4" />
+                        Ver a loja
+                        <ExternalLink className="ml-auto size-3.5 opacity-60" />
+                    </a>
+                )}
                 <DropdownMenu>
                     <DropdownMenuTrigger className="hover:bg-sidebar-accent flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left">
                         <span className="bg-sidebar-accent text-foreground flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold">

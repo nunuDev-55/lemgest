@@ -121,6 +121,23 @@ class SiteECatalogoTest extends TestCase
         $this->get('/catalogo/reserva')->assertInertia(fn (Assert $p) => $p->has('linhas', 0));
     }
 
+    public function test_equipa_ve_a_loja_com_precos_a_partir_do_lemgest(): void
+    {
+        // Administrador: acesso automático
+        $this->actingAs($this->admin, 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p
+            ->where('produtos.0.preco_dia', '1740.00')
+            ->where('equipa.nome', $this->admin->name)
+            ->where('podeReservar', false));
+        $this->get('/painel')->assertInertia(fn (Assert $p) => $p->where('auth.permissoes', fn ($l) => collect($l)->contains('loja.ver')));
+        // A equipa não faz pedidos: os pedidos são das contas de clientes
+        $this->post('/catalogo/reserva/linhas', ['produto_id' => $this->sofa->id, 'quantidade' => 1])->assertRedirect('/conta/entrar');
+
+        // Gestor tem "Ver a loja"; Comercial não (vê como um visitante)
+        $this->actingAs($this->utilizadorComPerfil('Gestor'), 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p->where('produtos.0.preco_dia', '1740.00'));
+        $this->actingAs($this->utilizadorComPerfil('Comercial'), 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p
+            ->where('produtos.0.preco_dia', null)->where('equipa', null));
+    }
+
     public function test_cliente_nunca_entra_no_sistema_interno(): void
     {
         $this->actingAs($this->conta(), 'cliente');
