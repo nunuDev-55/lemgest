@@ -7,6 +7,7 @@ use App\Models\Factura;
 use App\Models\Pagamento;
 use App\Models\Produto;
 use App\Models\Terceiro;
+use App\Support\Autor;
 use App\Support\Dinheiro;
 use App\Support\Extenso;
 use App\Support\Opcoes;
@@ -94,12 +95,13 @@ trait DadosDocumento
     protected function eventos(Model $doc): Collection
     {
         return Activity::where('subject_type', $doc->getMorphClass())->where('subject_id', $doc->getKey())
-            ->with('causer:id,name')->latest('id')->limit(15)->get()
+            // O autor pode ser da equipa ou um cliente da loja (tabelas diferentes): carrega-se o registo inteiro
+            ->with('causer')->latest('id')->limit(15)->get()
             ->map(fn (Activity $a) => [
                 'id' => $a->id,
                 'data' => $a->created_at?->toIso8601String(),
                 'descricao' => $a->description,
-                'utilizador' => $a->causer?->name ?? 'Sistema',
+                'utilizador' => Autor::nome($a->causer),
             ]);
     }
 

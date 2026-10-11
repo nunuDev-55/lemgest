@@ -119,6 +119,11 @@ class SiteECatalogoTest extends TestCase
         $this->assertSame('12000.00', (string) $r->total_sem_iva);
         $this->assertSame(0, PedidoController::pecasNoCarrinho(request()));
         $this->get('/catalogo/reserva')->assertInertia(fn (Assert $p) => $p->has('linhas', 0));
+
+        // A equipa abre o pedido: o histórico mostra o cliente como autor (antes dava erro) e a auditoria também
+        $this->actingAs($this->admin, 'web')->get("/reservas/{$r->id}")->assertOk()
+            ->assertInertia(fn (Assert $p) => $p->where('eventos', fn ($e) => collect($e)->contains('utilizador', 'Nádia Cossa (cliente, pela loja)')));
+        $this->get('/administracao/auditoria')->assertOk();
     }
 
     public function test_equipa_ve_a_loja_com_precos_a_partir_do_lemgest(): void

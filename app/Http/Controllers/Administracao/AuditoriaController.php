@@ -10,6 +10,7 @@ use App\Models\Inventario;
 use App\Models\Produto;
 use App\Models\Terceiro;
 use App\Models\User;
+use App\Support\Autor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -110,7 +111,7 @@ class AuditoriaController extends Controller
                 'modulo' => self::MODULOS[$a->log_name] ?? $a->log_name,
                 'evento' => $a->event,
                 'descricao' => $a->description,
-                'utilizador' => $a->causer?->name ?? 'Sistema',
+                'utilizador' => Autor::nome($a->causer),
                 'registo' => $this->descreverRegisto($a),
                 'alteracoes' => $this->alteracoes($a),
             ]);
