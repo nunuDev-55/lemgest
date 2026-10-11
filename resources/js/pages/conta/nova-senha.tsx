@@ -47,7 +47,11 @@ export default function NovaSenha({ token, email }: { token: string; email: stri
                         required
                     />
                 </div>
-                <Button type="submit" className="w-full" disabled={processing}>
+                <Button
+                    type="submit"
+                    className="h-11 w-full rounded-full bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90"
+                    disabled={processing}
+                >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}
                     Guardar senha
                 </Button>

@@ -1,10 +1,11 @@
 import InputError from '@/components/input-error';
 import { CartaoProduto, Disponibilidade, Foto, TituloSeccao, type ProdutoLoja } from '@/components/site';
+import { VisorFotos } from '@/components/visor-fotos';
 import SiteLayout, { useSite } from '@/layouts/site-layout';
 import { formatNumero } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Link, router, useForm } from '@inertiajs/react';
-import { ChevronLeft, Hammer, LoaderCircle, Palette, Plus, Truck } from 'lucide-react';
+import { ChevronLeft, Expand, Hammer, LoaderCircle, Palette, Plus, Truck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 interface Props {
@@ -26,6 +27,7 @@ const GARANTIAS = [
 export default function ProdutoSite({ produto: p, filtros, podeReservar, relacionados }: Props) {
     const { cliente, equipa } = useSite();
     const [activa, setActiva] = useState(0);
+    const [visor, setVisor] = useState<number | null>(null);
     const [datas, setDatas] = useState({ de: filtros.de ?? '', ate: filtros.ate ?? '' });
     const form = useForm({ produto_id: p.id, quantidade: '1' });
     const foto = p.fotos[activa];
@@ -60,9 +62,31 @@ export default function ProdutoSite({ produto: p, filtros, podeReservar, relacio
                 <div className="mt-5 grid gap-10 lg:grid-cols-[1.25fr_1fr]">
                     {/* Fotos */}
                     <div>
-                        <div className="aspect-[4/3] overflow-hidden rounded-[24px] bg-[var(--areia)]">
-                            {foto ? <img src={foto.grande} alt={p.nome} className="size-full object-cover" /> : <Foto src={null} alt={p.nome} />}
-                        </div>
+                        {foto ? (
+                            <button
+                                type="button"
+                                onClick={() => setVisor(activa)}
+                                className="group relative block aspect-[4/3] w-full overflow-hidden rounded-[24px] bg-[var(--areia)]"
+                                aria-label="Ver a foto em grande"
+                            >
+                                <Foto
+                                    key={foto.id}
+                                    src={foto.grande}
+                                    alt={p.nome}
+                                    prioridade
+                                    className="transition-transform duration-500 group-hover:scale-[1.02]"
+                                />
+                                <span className="absolute right-4 bottom-4 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[12.5px] font-medium opacity-0 transition-opacity group-hover:opacity-100">
+                                    <Expand className="size-3.5" />
+                                    Ver em grande
+                                </span>
+                            </button>
+                        ) : (
+                            <div className="aspect-[4/3] overflow-hidden rounded-[24px]">
+                                <Foto src={null} alt={p.nome} />
+                            </div>
+                        )}
+                        <VisorFotos fotos={p.fotos.map((f) => ({ src: f.grande, alt: p.nome }))} indice={visor} onMudar={setVisor} />
                         {p.fotos.length > 1 && (
                             <div className="mt-3 flex gap-2 overflow-x-auto">
                                 {p.fotos.map((f, i) => (

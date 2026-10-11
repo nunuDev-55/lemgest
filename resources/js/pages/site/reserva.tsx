@@ -1,7 +1,7 @@
 import InputError from '@/components/input-error';
 import { Disponibilidade, Foto, type ProdutoLoja } from '@/components/site';
 import SiteLayout from '@/layouts/site-layout';
-import { formatNumero } from '@/lib/format';
+import { formatNumero, formatValor } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Link, router, useForm } from '@inertiajs/react';
 import { LoaderCircle, Trash2 } from 'lucide-react';
@@ -168,7 +168,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                                         <span>
                                             Sim, a LemServ leva e recolhe o material
                                             <span className="text-muted-foreground block text-[12.5px]">
-                                                Taxa de {formatNumero(transporte.minimo)} a {formatNumero(transporte.maximo)} MT, conforme o local
+                                                Taxa de {formatValor(transporte.minimo)} a {formatValor(transporte.maximo)} MT, conforme o local
                                                 (confirmada pela LemServ).
                                             </span>
                                         </span>

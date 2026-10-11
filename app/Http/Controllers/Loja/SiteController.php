@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Loja;
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
 use App\Models\Produto;
+use App\Support\Definicoes;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,6 +42,8 @@ class SiteController extends Controller
             'servicos' => Produto::where('na_loja', true)->where('tipo', 'servico')->orderBy('loja_ordem')->orderBy('nome')
                 ->get(['id', 'nome', 'loja_descricao'])
                 ->map(fn (Produto $s) => ['id' => $s->id, 'nome' => $s->nome, 'descricao' => $s->loja_descricao]),
+            // Para as perguntas frequentes (vem da Configuração → Documentos)
+            'transporte' => app(Definicoes::class)->transporte(),
         ]);
     }
 }

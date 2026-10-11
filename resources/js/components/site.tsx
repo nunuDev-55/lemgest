@@ -2,7 +2,7 @@ import { formatNumero } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight, ImageOff } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 /** Material como o site e o catálogo o mostram (o preço e a disponibilidade só vêm para clientes com sessão e para a equipa) */
 export interface ProdutoLoja {
@@ -48,9 +48,25 @@ export const EVENTOS: FotoEvento[] = [
 
 export const fotoEvento = (n: string, tamanho: 'g' | 'm' = 'm') => `/img/eventos/${n}-${tamanho}.webp`;
 
-export function Foto({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+/** Foto que aparece com um esbatimento suave quando acaba de carregar */
+export function Foto({ src, alt, className, prioridade }: { src: string | null; alt: string; className?: string; prioridade?: boolean }) {
+    const [carregada, setCarregada] = useState(false);
     return src ? (
-        <img src={src} alt={alt} loading="lazy" className={cn('size-full bg-[var(--areia)] object-cover', className)} />
+        <img
+            src={src}
+            alt={alt}
+            loading={prioridade ? 'eager' : 'lazy'}
+            onLoad={() => setCarregada(true)}
+            ref={(img) => {
+                // Já estava na cache do navegador
+                if (img?.complete && img.naturalWidth > 0 && !carregada) setCarregada(true);
+            }}
+            className={cn(
+                'size-full bg-[var(--areia)] object-cover transition-opacity duration-500',
+                carregada ? 'opacity-100' : 'opacity-0',
+                className,
+            )}
+        />
     ) : (
         <div className={cn('text-muted-foreground flex size-full items-center justify-center bg-[var(--areia)]', className)} aria-hidden="true">
             <ImageOff className="size-6 opacity-40" />
@@ -101,7 +117,7 @@ export function Disponibilidade({ n, className }: { n: number | null | undefined
 export function CartaoProduto({ p, sufixo = '' }: { p: ProdutoLoja; sufixo?: string }) {
     return (
         <Link href={`/catalogo/${p.id}${sufixo}`} className="group flex flex-col">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--areia)]">
                 <Foto src={p.foto} alt={p.nome} className="transition-transform duration-500 group-hover:scale-[1.04]" />
                 <span className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-white/90 opacity-0 transition-opacity group-hover:opacity-100">
                     <ArrowUpRight className="size-4" />

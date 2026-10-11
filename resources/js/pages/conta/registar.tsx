@@ -144,7 +144,11 @@ export default function Registar({ provincias }: { provincias: Opcao[] }) {
                         required
                     />
                 </Campo>
-                <Button type="submit" className="mt-1 w-full sm:col-span-2" disabled={processing}>
+                <Button
+                    type="submit"
+                    className="mt-1 h-11 w-full rounded-full bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90 sm:col-span-2"
+                    disabled={processing}
+                >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}
                     Pedir conta
                 </Button>

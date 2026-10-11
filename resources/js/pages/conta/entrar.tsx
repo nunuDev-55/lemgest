@@ -16,7 +16,7 @@ export default function Entrar({ estado }: { estado?: string | null }) {
     }
 
     return (
-        <ContaEntradaLayout titulo="Entrar na sua conta" descricao="Veja as suas reservas e facturas da LemServ.">
+        <ContaEntradaLayout titulo="Entrar na sua conta" descricao="Veja os preços, a disponibilidade e as suas reservas.">
             {estado && (
                 <p className="mb-4 rounded-md border border-green-300 bg-green-50 px-3 py-2.5 text-[13.5px] text-green-900 dark:border-green-900 dark:bg-green-950/50 dark:text-green-200">
                     {estado}
@@ -53,7 +53,11 @@ export default function Entrar({ estado }: { estado?: string | null }) {
                     />
                     <InputError message={errors.password} />
                 </div>
-                <Button type="submit" className="mt-1 w-full" disabled={processing}>
+                <Button
+                    type="submit"
+                    className="mt-1 h-11 w-full rounded-full bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90"
+                    disabled={processing}
+                >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}
                     Entrar
                 </Button>

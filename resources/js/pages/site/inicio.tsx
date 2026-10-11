@@ -1,8 +1,11 @@
 import { CartaoProduto, Etiqueta, EVENTOS, Foto, fotoEvento, TituloSeccao, type ProdutoLoja } from '@/components/site';
+import { VisorFotos } from '@/components/visor-fotos';
 import SiteLayout, { linkWhatsApp, useSite } from '@/layouts/site-layout';
-import { formatNumero } from '@/lib/format';
+import { formatNumero, formatValor } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, ArrowUpRight, CalendarCheck, Hammer, MessageCircle, Palette, Search, Truck } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, CalendarCheck, Expand, Hammer, MessageCircle, Palette, Plus, Search, Truck } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Categoria {
     id: number;
@@ -16,6 +19,7 @@ interface Props {
     destaques: ProdutoLoja[];
     categorias: Categoria[];
     servicos: { id: number; nome: string; descricao: string | null }[];
+    transporte: { minimo: string; maximo: string };
 }
 
 const VANTAGENS = [
@@ -31,15 +35,51 @@ const PASSOS = [
     { icone: Truck, titulo: 'A LemServ confirma', texto: 'Confirmamos a disponibilidade e a taxa de transporte, entregamos e recolhemos.' },
 ];
 
-// Fotos escolhidas para cada parte da página
-const CAPA = EVENTOS[0];
+// Fotos escolhidas para cada parte da página (a capa vai alternando entre as três)
+const CAPAS = [EVENTOS[0], EVENTOS[5], EVENTOS[3]];
 const CAPA_PEQUENA = EVENTOS[6];
 const BANNER = EVENTOS[3];
 const GALERIA = [EVENTOS[1], EVENTOS[9], EVENTOS[7], EVENTOS[15], EVENTOS[2], EVENTOS[14], EVENTOS[11], EVENTOS[5]];
 
 /** Página inicial pública da LemServ */
-export default function Inicio({ destaques, categorias, servicos }: Props) {
+export default function Inicio({ destaques, categorias, servicos, transporte }: Props) {
     const { loja, cliente } = useSite();
+    const [capa, setCapa] = useState(0);
+    const [visor, setVisor] = useState<number | null>(null);
+
+    // A capa muda de foto a cada 6 segundos (não muda para quem pediu menos movimento no sistema)
+    useEffect(() => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const t = setInterval(() => setCapa((c) => (c + 1) % CAPAS.length), 6000);
+        return () => clearInterval(t);
+    }, []);
+
+    const perguntas = [
+        {
+            p: 'Como faço uma reserva?',
+            r: 'Crie a sua conta (a LemServ aprova-a), escolha o material no catálogo e junte-o à sua reserva. Indique as datas, o local e se quer transporte, e envie o pedido. A LemServ confirma a disponibilidade e contacta-o.',
+        },
+        {
+            p: 'Os preços são por dia?',
+            r: 'Sim. Cada peça tem um preço por dia, já com IVA. Num evento de vários dias, o preço multiplica pelos dias. Os preços aparecem no catálogo quando entra na sua conta.',
+        },
+        {
+            p: 'Quanto custa o transporte?',
+            r: `A LemServ leva e recolhe o material. A taxa vai de ${formatValor(transporte.minimo)} a ${formatValor(transporte.maximo)} MT, conforme o local, e é confirmada com a reserva. Também pode levantar e devolver no nosso armazém.`,
+        },
+        {
+            p: 'Com quanta antecedência devo reservar?',
+            r: 'Pelo site, pelo menos um dia antes. O material só fica guardado para si quando a LemServ confirma a reserva, por isso, para casamentos e eventos grandes, quanto antes melhor.',
+        },
+        {
+            p: 'Posso escolher as cores?',
+            r: 'Sim. Diga-nos o tema de cores ao pedir a reserva e combinamos as almofadas, as mesas e a decoração.',
+        },
+        {
+            p: 'Como pago?',
+            r: 'Depois de confirmada a reserva, a LemServ envia-lhe a factura com os dados para pagamento. Cada pagamento tem o seu recibo, que pode ver na sua conta.',
+        },
+    ];
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de um orçamento para um evento.');
     const destaque = destaques.find((d) => d.foto) ?? destaques[0];
 
@@ -83,8 +123,31 @@ export default function Inicio({ destaques, categorias, servicos }: Props) {
                     </dl>
                 </div>
                 <div className="relative">
-                    <div className="aspect-[4/5] overflow-hidden rounded-[28px] lg:aspect-[5/6]">
-                        <img src={fotoEvento(CAPA.n, 'g')} alt={CAPA.alt} className="size-full object-cover" fetchPriority="high" />
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-[var(--areia)] lg:aspect-[5/6]">
+                        {CAPAS.map((f, i) => (
+                            <img
+                                key={f.n}
+                                src={fotoEvento(f.n, 'g')}
+                                alt={i === capa ? f.alt : ''}
+                                aria-hidden={i !== capa}
+                                fetchPriority={i === 0 ? 'high' : 'low'}
+                                className={cn(
+                                    'absolute inset-0 size-full object-cover transition-opacity duration-[1200ms] ease-out',
+                                    i === capa ? 'opacity-100' : 'opacity-0',
+                                )}
+                            />
+                        ))}
+                        <div className="absolute top-5 right-5 flex gap-1.5">
+                            {CAPAS.map((f, i) => (
+                                <button
+                                    key={f.n}
+                                    type="button"
+                                    onClick={() => setCapa(i)}
+                                    aria-label={`Mostrar a foto ${i + 1}`}
+                                    className={cn('h-1.5 rounded-full bg-white transition-all', i === capa ? 'w-6' : 'w-1.5 opacity-60')}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <Link
                         href="/catalogo"
@@ -248,17 +311,27 @@ export default function Inicio({ destaques, categorias, servicos }: Props) {
             <section id="eventos" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-20 md:px-8">
                 <TituloSeccao etiqueta="Eventos que montámos" titulo="Cada evento com a sua cara" />
                 <div className="columns-2 gap-4 md:columns-4 [&>*]:mb-4">
-                    {GALERIA.map((f) => (
-                        <figure key={f.n} className="break-inside-avoid overflow-hidden rounded-2xl">
+                    {GALERIA.map((f, i) => (
+                        <button
+                            key={f.n}
+                            type="button"
+                            onClick={() => setVisor(i)}
+                            className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl bg-[var(--areia)]"
+                            aria-label={`Ver em grande: ${f.alt}`}
+                        >
                             <img
                                 src={fotoEvento(f.n)}
                                 alt={f.alt}
                                 loading="lazy"
-                                className="w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+                                className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                             />
-                        </figure>
+                            <span className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-white/90 opacity-0 transition-opacity group-hover:opacity-100">
+                                <Expand className="size-4" />
+                            </span>
+                        </button>
                     ))}
                 </div>
+                <VisorFotos fotos={GALERIA.map((f) => ({ src: fotoEvento(f.n, 'g'), alt: f.alt }))} indice={visor} onMudar={setVisor} />
             </section>
 
             {/* Como reservar */}
@@ -292,6 +365,39 @@ export default function Inicio({ destaques, categorias, servicos }: Props) {
                     </ul>
                 </section>
             )}
+
+            {/* Perguntas frequentes */}
+            <section id="perguntas" className="mx-auto grid max-w-7xl scroll-mt-24 gap-10 px-4 pt-20 md:px-8 lg:grid-cols-[1fr_1.6fr]">
+                <div>
+                    <Etiqueta>Perguntas frequentes</Etiqueta>
+                    <h2 className="font-titulo text-[30px] leading-[1.1] tracking-[-0.01em] md:text-[38px]">O que costumam perguntar-nos</h2>
+                    <p className="text-muted-foreground mt-4 max-w-sm text-[15px] leading-relaxed">
+                        Tem outra dúvida? Fale connosco pelo WhatsApp: respondemos o mais depressa possível.
+                    </p>
+                    {whatsapp && (
+                        <a
+                            href={whatsapp}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-6 inline-flex items-center gap-2 rounded-full border border-[var(--tinta)]/20 px-5 py-2.5 text-[14px] font-medium hover:bg-white"
+                        >
+                            <MessageCircle className="size-4" />
+                            Perguntar no WhatsApp
+                        </a>
+                    )}
+                </div>
+                <div className="divide-y border-y">
+                    {perguntas.map((q) => (
+                        <details key={q.p} className="group">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-[16px] font-medium [&::-webkit-details-marker]:hidden">
+                                {q.p}
+                                <Plus className="size-5 shrink-0 transition-transform duration-200 group-open:rotate-45" strokeWidth={1.6} />
+                            </summary>
+                            <p className="text-muted-foreground -mt-1 pr-10 pb-5 text-[14.5px] leading-relaxed">{q.r}</p>
+                        </details>
+                    ))}
+                </div>
+            </section>
 
             {/* Chamada final */}
             {!cliente && (

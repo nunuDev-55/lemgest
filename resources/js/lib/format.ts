@@ -64,3 +64,8 @@ export function formatData(iso: string | null | undefined): string {
 export function formatQuantidade(valor: number | string): string {
     return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 3 }).format(Number(valor));
 }
+
+/** Valores redondos sem os cêntimos: 3000 → "3 000"; 1500.50 → "1 500,50" */
+export function formatValor(valor: number | string | null | undefined): string {
+    return formatNumero(valor).replace(/,00$/, '');
+}

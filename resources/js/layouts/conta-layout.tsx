@@ -1,48 +1,18 @@
 import { Notificacoes } from '@/components/notificacoes';
+import { EVENTOS, fotoEvento } from '@/components/site';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { LogOut } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import { type ReactNode } from 'react';
-import { useSempreClaro } from './site-layout';
+import SiteLayout, { useSempreClaro, type DadosSite } from './site-layout';
 
-/** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta */
-export interface DadosConta {
-    cliente: { id: number; nome: string; email: string; permissoes: string[] } | null;
-    loja: {
-        nome: string;
-        nome_comercial: string | null;
-        telemovel: string | null;
-        telefone: string | null;
-        email: string | null;
-        logotipo: string;
-    } | null;
-    [key: string]: unknown;
-}
+/** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta (os mesmos do site) */
+export type DadosConta = DadosSite;
 
-function Marca() {
-    const { loja } = usePage<DadosConta>().props;
-    return (
-        <Link href="/conta" className="flex items-center gap-3" aria-label="LemServ, área do cliente">
-            <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-9 w-auto max-w-24 object-contain" />
-            <span className="flex flex-col leading-tight">
-                <span className="text-[15px] font-semibold">{loja?.nome_comercial ?? 'LemServ'}</span>
-                <span className="text-muted-foreground text-[12px]">Lounge e Outdoor</span>
-            </span>
-        </Link>
-    );
-}
+// Foto ao lado dos formulários de entrada e registo
+const FOTO = EVENTOS[1];
 
-function Contactos() {
-    const { loja } = usePage<DadosConta>().props;
-    const telefone = loja?.telemovel ?? loja?.telefone;
-    return (
-        <p className="text-muted-foreground text-center text-[12.5px]">
-            {[loja?.nome_comercial ?? 'LemServ', 'Matola, Moçambique', telefone, loja?.email].filter(Boolean).join(' · ')}
-        </p>
-    );
-}
-
-/** Entrar, registar e recuperar a senha: um cartão ao centro */
+/** Entrar, registar e recuperar a senha: formulário à esquerda e uma foto de evento à direita */
 export function ContaEntradaLayout({
     titulo,
     descricao,
@@ -55,20 +25,46 @@ export function ContaEntradaLayout({
     largo?: boolean;
 }) {
     useSempreClaro();
+    const { loja } = usePage<DadosConta>().props;
+    const nome = loja?.nome_comercial ?? 'LemServ';
+    const telefone = loja?.telemovel ?? loja?.telefone;
+
     return (
-        <div className="site bg-muted flex min-h-svh flex-col items-center justify-center px-4 py-10">
-            <Head title={titulo} />
-            <div className={cn('w-full', largo ? 'max-w-[560px]' : 'max-w-[400px]')}>
-                <div className="mb-7 flex flex-col items-center gap-5 text-center">
-                    <Marca />
-                    <div className="flex flex-col gap-1.5">
-                        <h1 className="font-titulo text-[28px] tracking-[-0.015em]">{titulo}</h1>
-                        {descricao && <p className="text-muted-foreground text-[14px]">{descricao}</p>}
-                    </div>
+        <div className="site bg-background text-foreground grid min-h-screen lg:grid-cols-[1fr_1.05fr]">
+            <Head title={`${titulo} · LemServ`} />
+            <div className="flex flex-col px-5 py-6 sm:px-10 lg:px-16">
+                <div className="flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3" aria-label={`${nome}, página inicial`}>
+                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-10 w-auto max-w-24 object-contain" />
+                        <span className="font-titulo text-[19px]">{nome}</span>
+                    </Link>
+                    <Link href="/" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[13px]">
+                        <ChevronLeft className="size-3.5" />
+                        Voltar ao site
+                    </Link>
                 </div>
-                <div className="bg-card rounded-lg border p-6">{children}</div>
-                <div className="mt-6">
-                    <Contactos />
+
+                <div className={cn('mx-auto flex w-full flex-1 flex-col justify-center py-10', largo ? 'max-w-[560px]' : 'max-w-[400px]')}>
+                    <h1 className="font-titulo text-[34px] leading-[1.1] tracking-[-0.015em]">{titulo}</h1>
+                    {descricao && <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">{descricao}</p>}
+                    <div className="mt-8">{children}</div>
+                </div>
+
+                <p className="text-muted-foreground text-[12.5px]">
+                    {[nome, 'Matola, Moçambique', telefone, loja?.email].filter(Boolean).join(' · ')}
+                </p>
+            </div>
+
+            <div className="relative hidden p-4 lg:block">
+                <div className="relative h-full overflow-hidden rounded-[28px]">
+                    <img src={fotoEvento(FOTO.n, 'g')} alt={FOTO.alt} className="absolute inset-0 size-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    <div className="absolute inset-x-10 bottom-10 text-white">
+                        <p className="font-titulo text-[34px] leading-[1.1]">Do primeiro sofá à última almofada.</p>
+                        <p className="mt-3 max-w-md text-[15px] text-white/80">
+                            Veja os preços, a disponibilidade nas suas datas e peça a reserva online. Nós tratamos do resto.
+                        </p>
+                    </div>
                 </div>
             </div>
             <Notificacoes />
@@ -79,7 +75,6 @@ export function ContaEntradaLayout({
 /** Cada entrada só aparece se o perfil Cliente der a permissão (a protecção verdadeira está nas rotas) */
 const MENU: { label: string; href: string; exacto?: boolean; permissao?: string }[] = [
     { label: 'Início', href: '/conta', exacto: true },
-    { label: 'Catálogo', href: '/catalogo', permissao: 'loja.catalogo' },
     { label: 'Reservas', href: '/conta/reservas', permissao: 'conta.reservas' },
     { label: 'Facturas e recibos', href: '/conta/facturas', permissao: 'conta.documentos' },
     { label: 'Os meus dados', href: '/conta/dados' },
@@ -90,41 +85,39 @@ export function useClientePode() {
     return (permissao?: string) => !permissao || (cliente?.permissoes ?? []).includes(permissao);
 }
 
-/** Área do cliente: cabeçalho com a marca e o menu; o conteúdo numa coluna central */
+/** Área do cliente: dentro do site (mesmo cabeçalho e rodapé), com os separadores da conta */
 export default function ContaLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
-    useSempreClaro();
     const { cliente } = usePage<DadosConta>().props;
     const pode = useClientePode();
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
     const activo = (href: string, exacto?: boolean) => (exacto ? caminho === href : caminho === href || caminho.startsWith(`${href}/`));
 
     return (
-        <div className="site bg-background text-foreground flex min-h-svh flex-col">
-            <Head title={titulo} />
-            <header className="bg-background/95 sticky top-0 z-30 border-b backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 md:px-6">
-                    <Marca />
-                    <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground hidden text-[13px] sm:inline">{cliente?.nome}</span>
-                        <button
-                            type="button"
-                            onClick={() => router.post('/conta/sair')}
-                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[13px]"
-                        >
-                            <LogOut className="size-4" />
-                            Sair
-                        </button>
+        <SiteLayout titulo={`${titulo} · LemServ`}>
+            <div className="mx-auto w-full max-w-5xl px-4 pt-10 md:px-8">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                        <p className="text-primary text-[12px] font-medium tracking-[0.16em] uppercase">A minha conta</p>
+                        <p className="text-muted-foreground mt-1 text-[13.5px]">{cliente?.nome}</p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => router.post('/conta/sair')}
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[13px]"
+                    >
+                        <LogOut className="size-4" />
+                        Sair
+                    </button>
                 </div>
-                <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 md:px-5" aria-label="Área do cliente">
+                <nav className="mt-4 flex gap-1 overflow-x-auto border-b" aria-label="Área do cliente">
                     {MENU.filter((m) => pode(m.permissao)).map((m) => (
                         <Link
                             key={m.href}
                             href={m.href}
                             className={cn(
-                                '-mb-px border-b-2 px-2.5 pt-1 pb-2.5 text-[13.5px] whitespace-nowrap',
+                                '-mb-px border-b-2 px-3 pt-1 pb-3 text-[14px] whitespace-nowrap',
                                 activo(m.href, m.exacto)
-                                    ? 'border-foreground text-foreground font-medium'
+                                    ? 'border-[var(--tinta)] font-medium text-[var(--tinta)]'
                                     : 'text-muted-foreground hover:text-foreground border-transparent',
                             )}
                         >
@@ -132,12 +125,8 @@ export default function ContaLayout({ titulo, children }: { titulo: string; chil
                         </Link>
                     ))}
                 </nav>
-            </header>
-            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-7 md:px-6">{children}</main>
-            <footer className="border-t py-5">
-                <Contactos />
-            </footer>
-            <Notificacoes />
-        </div>
+                <div className="py-8">{children}</div>
+            </div>
+        </SiteLayout>
     );
 }

@@ -54,6 +54,7 @@ const LIGACOES = [
     { label: 'Catálogo', href: '/catalogo' },
     { label: 'Eventos', href: '/#eventos' },
     { label: 'Como reservar', href: '/#como-reservar' },
+    { label: 'Perguntas', href: '/#perguntas' },
     { label: 'Contactos', href: '#contactos' },
 ];
 
@@ -183,6 +184,18 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
             <main className="flex-1">{children}</main>
 
             <Rodape />
+            {whatsapp && (
+                <a
+                    href={whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Falar com a LemServ no WhatsApp"
+                    title="Falar no WhatsApp"
+                    className="fixed right-4 bottom-4 z-40 flex size-13 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg shadow-black/15 transition-transform hover:scale-105 md:right-6 md:bottom-6"
+                >
+                    <MessageCircle className="size-6" />
+                </a>
+            )}
             <Notificacoes />
         </div>
     );
