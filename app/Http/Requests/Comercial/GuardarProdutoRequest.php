@@ -30,6 +30,8 @@ class GuardarProdutoRequest extends FormRequest
             'quantidade_total' => $servico ? 0 : ($this->filled('quantidade_total') ? self::numero($this->input('quantidade_total')) : 0),
             'loja_ordem' => $this->filled('loja_ordem') ? $this->input('loja_ordem') : 0,
             'categoria_id' => $this->filled('categoria_id') ? $this->input('categoria_id') : null,
+            'material_id' => $this->filled('material_id') ? $this->input('material_id') : null,
+            'referencia' => $this->filled('referencia') ? strtoupper(trim((string) $this->input('referencia'))) : null,
         ]);
     }
 
@@ -53,10 +55,12 @@ class GuardarProdutoRequest extends FormRequest
         $produto = $this->route('produto');
 
         return [
-            'referencia' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.\-\/]+$/', Rule::unique('produtos', 'referencia')->ignore($produto?->id)],
+            // Produto novo com categoria: o código pode ficar vazio e é gerado (SOF-001...)
+            'referencia' => [Rule::requiredIf(fn () => $produto !== null || ! $this->filled('categoria_id')), 'nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.\-\/]+$/', Rule::unique('produtos', 'referencia')->ignore($produto?->id)],
             'tipo' => ['required', Rule::in(['produto', 'servico'])],
             'nome' => ['required', 'string', 'max:190'],
             'categoria_id' => ['nullable', 'integer', Rule::exists('categorias', 'id')],
+            'material_id' => ['nullable', 'integer', Rule::exists('materiais', 'id')],
             'descricao' => ['nullable', 'string', 'max:5000'],
             'taxa_iva' => ['required', Rule::in(array_keys(Opcoes::TAXAS_IVA))],
             'unidade' => ['required', Rule::in(array_keys(Opcoes::UNIDADES))],
@@ -87,7 +91,8 @@ class GuardarProdutoRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'referencia' => 'referência',
+            'referencia' => 'código',
+            'material_id' => 'material',
             'categoria_id' => 'categoria',
             'preco' => 'preço de venda',
             'taxa_iva' => 'taxa de IVA',
@@ -103,7 +108,9 @@ class GuardarProdutoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'referencia.regex' => 'A referência só pode ter letras, números e os sinais - _ . /, sem espaços.',
+            'referencia.regex' => 'O código só pode ter letras, números e os sinais - _ . /, sem espaços.',
+            'referencia.required' => 'Escreva o código ou escolha uma categoria para o gerar automaticamente.',
+            'referencia.unique' => 'Já existe um produto com este código.',
             'preco_aluguer.required_if_accepted' => 'Indique o preço por dia (o produto está marcado para aluguer).',
             'preco.required_if_accepted' => 'Indique o preço de venda (o produto está marcado para venda).',
             'quantidade_total.integer' => 'A quantidade tem de ser um número inteiro.',

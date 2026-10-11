@@ -9,10 +9,12 @@ use App\Notifications\NovaSenhaCliente;
 use App\Services\ContasCliente;
 use App\Services\FacturaService;
 use App\Services\ReservaService;
+use App\Support\Permissoes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /** Etapa 6 do roadmap: contas de clientes (registo, aprovação pela LemServ, área do cliente) */
@@ -133,9 +135,16 @@ class ContasClienteTest extends TestCase
         $this->entrar()->assertRedirect('/conta');
         $this->assertAuthenticatedAs($conta, 'cliente');
 
+        // Perfil Cliente de origem: catálogo, reservar e ver as reservas; facturas e recibos desligados
         $this->get('/conta')->assertInertia(fn (Assert $p) => $p
-            ->component('conta/inicio')->has('proximas', 1)->where('proximas.0.id', $minha->id)->has('porPagar', 1)
-            ->where('cliente.nome', 'Nádia Cossa')->where('loja.nome', fn ($v) => $v !== null));
+            ->component('conta/inicio')->has('proximas', 1)->where('proximas.0.id', $minha->id)->where('porPagar', null)
+            ->where('cliente.nome', 'Nádia Cossa')->where('cliente.permissoes', Permissoes::PERFIL_CLIENTE_INICIAL)->where('loja.nome', fn ($v) => $v !== null));
+        $this->get('/conta/facturas')->assertRedirect('/conta');
+        $this->get("/conta/facturas/{$minhaFactura->id}")->assertRedirect('/conta');
+
+        // A LemServ liga as facturas no perfil Cliente
+        Role::findByName(Permissoes::CLIENTE, 'cliente')->givePermissionTo('conta.documentos');
+        $this->get('/conta')->assertInertia(fn (Assert $p) => $p->has('porPagar', 1));
         $this->get('/conta/reservas')->assertInertia(fn (Assert $p) => $p->has('reservas.data', 1));
         $this->get("/conta/reservas/{$minha->id}")->assertOk();
         $this->get("/conta/reservas/{$alheia->id}")->assertNotFound();
@@ -229,6 +238,31 @@ class ContasClienteTest extends TestCase
 
         // Uma sessão da equipa não abre a área do cliente
         $this->actingAs($this->comercial, 'web')->get('/conta')->assertRedirect('/conta/entrar');
+    }
+
+    public function test_perfil_cliente_em_perfis_e_permissoes(): void
+    {
+        $admin = $this->administrador();
+        $cliente = Role::findByName(Permissoes::CLIENTE, 'cliente');
+
+        $this->actingAs($admin, 'web')->get('/administracao/perfis')->assertInertia(fn (Assert $p) => $p
+            ->where('perfis', fn ($perfis) => collect($perfis)->where('cliente', true)->pluck('name')->all() === ['Cliente'])
+            ->has('catalogoCliente', 2));
+
+        // Só aceita permissões do catálogo dos clientes
+        $this->put("/administracao/perfis/{$cliente->id}", ['permissoes' => ['facturas.ver']])->assertSessionHasErrors('permissoes.0');
+        $this->put("/administracao/perfis/{$cliente->id}", ['permissoes' => ['loja.catalogo']])->assertSessionHasNoErrors();
+        $this->assertSame(['loja.catalogo'], Permissoes::doCliente());
+
+        // Não se apaga e o nome não se repete na equipa
+        $this->delete("/administracao/perfis/{$cliente->id}")->assertForbidden();
+        $this->post('/administracao/perfis', ['name' => 'Cliente'])->assertSessionHasErrors('name');
+
+        // Sem "Ver as suas reservas", a página de reservas leva ao início da conta
+        $conta = $this->contaActiva();
+        Auth::guard('web')->logout();
+        $this->actingAs($conta, 'cliente')->get('/conta/reservas')->assertRedirect('/conta');
+        $this->get('/conta')->assertInertia(fn (Assert $p) => $p->where('proximas', null)->where('porPagar', null));
     }
 
     public function test_logotipo_publico(): void

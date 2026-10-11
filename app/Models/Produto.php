@@ -17,7 +17,7 @@ class Produto extends Model
     protected $table = 'produtos';
 
     protected $fillable = [
-        'referencia', 'tipo', 'nome', 'categoria_id', 'descricao', 'preco', 'taxa_iva', 'unidade',
+        'referencia', 'tipo', 'nome', 'categoria_id', 'material_id', 'descricao', 'preco', 'taxa_iva', 'unidade',
         'preco_compra', 'em_venda', 'em_compra',
         // quantidade_total e quantidade_fora só mudam por movimentos de stock (App\Services\Stock)
         'em_aluguer', 'preco_aluguer',
@@ -48,6 +48,12 @@ class Produto extends Model
     }
 
     /** Fotos pela ordem escolhida (a principal é a capa nas listas e na loja, esteja onde estiver) */
+    /** @return BelongsTo<Material, $this> */
+    public function material(): BelongsTo
+    {
+        return $this->belongsTo(Material::class);
+    }
+
     public function fotos(): HasMany
     {
         return $this->hasMany(ProdutoFoto::class)->orderBy('posicao')->orderBy('id');
@@ -74,7 +80,7 @@ class Produto extends Model
         return LogOptions::defaults()
             ->useLogName('produtos')
             ->logOnly([
-                'referencia', 'nome', 'categoria_id', 'preco', 'taxa_iva', 'em_venda', 'em_compra',
+                'referencia', 'nome', 'categoria_id', 'material_id', 'preco', 'taxa_iva', 'em_venda', 'em_compra',
                 'em_aluguer', 'preco_aluguer', 'quantidade_total', 'na_loja', 'loja_destaque',
             ])
             ->logOnlyDirty()

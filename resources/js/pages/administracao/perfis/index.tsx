@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Crown, LoaderCircle, Lock, Plus, Save, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Crown, Globe, LoaderCircle, Lock, Plus, Save, ShieldCheck, Store, Trash2, Users } from 'lucide-react';
 import { FormEventHandler, useEffect, useMemo, useState } from 'react';
 
 interface Perfil {
@@ -20,6 +20,8 @@ interface Perfil {
     permissoes: string[];
     sistema: boolean;
     acessoTotal: boolean;
+    /** Perfil das contas de clientes da loja (guarda própria, catálogo de permissões próprio) */
+    cliente: boolean;
 }
 
 interface Modulo {
@@ -33,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Perfis e permissões', href: '/administracao/perfis' },
 ];
 
-export default function PerfisIndex({ perfis, catalogo }: { perfis: Perfil[]; catalogo: Modulo[] }) {
+export default function PerfisIndex({ perfis, catalogo, catalogoCliente }: { perfis: Perfil[]; catalogo: Modulo[]; catalogoCliente: Modulo[] }) {
     const [seleccionadoId, setSeleccionadoId] = useState<number>(() => perfis.find((p) => !p.acessoTotal)?.id ?? perfis[0]?.id);
     const [novoAberto, setNovoAberto] = useState(false);
     const [aApagar, setAApagar] = useState<Perfil | null>(null);
@@ -94,7 +96,9 @@ export default function PerfisIndex({ perfis, catalogo }: { perfis: Perfil[]; ca
 
     if (!seleccionado) return null;
     const bloqueado = seleccionado.acessoTotal;
-
+    const modulos = seleccionado.cliente ? catalogoCliente : catalogo;
+    const quem = (p: Perfil, n: number) =>
+        p.cliente ? `${n} ${n === 1 ? 'conta activa' : 'contas activas'}` : `${n} ${n === 1 ? 'utilizador' : 'utilizadores'}`;
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Perfis e permissões" />
@@ -115,27 +119,36 @@ export default function PerfisIndex({ perfis, catalogo }: { perfis: Perfil[]; ca
                     {/* Lista de perfis */}
                     <nav className="flex flex-col gap-px self-start rounded-lg border p-1.5" aria-label="Perfis">
                         {perfis.map((p) => (
-                            <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => setSeleccionadoId(p.id)}
-                                aria-current={p.id === seleccionado.id ? 'true' : undefined}
-                                className={cn(
-                                    'flex items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors',
-                                    p.id === seleccionado.id ? 'bg-accent' : 'hover:bg-muted',
+                            <div key={p.id} className="contents">
+                                {p.cliente && (
+                                    <p className="text-muted-foreground mt-2 border-t px-2.5 pt-3 pb-1 text-[12px] font-medium">Clientes da loja</p>
                                 )}
-                            >
-                                <div className="text-muted-foreground flex size-7 shrink-0 items-center justify-center">
-                                    {p.acessoTotal ? <Crown className="size-4" /> : <ShieldCheck className="size-4" />}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-[13.5px] font-medium">{p.name}</p>
-                                    <p className="text-muted-foreground text-[12px]">
-                                        {p.acessoTotal ? 'Acesso total' : `${p.permissoes.length} permissões`} · {p.utilizadores}{' '}
-                                        {p.utilizadores === 1 ? 'utilizador' : 'utilizadores'}
-                                    </p>
-                                </div>
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSeleccionadoId(p.id)}
+                                    aria-current={p.id === seleccionado.id ? 'true' : undefined}
+                                    className={cn(
+                                        'flex items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors',
+                                        p.id === seleccionado.id ? 'bg-accent' : 'hover:bg-muted',
+                                    )}
+                                >
+                                    <div className="text-muted-foreground flex size-7 shrink-0 items-center justify-center">
+                                        {p.acessoTotal ? (
+                                            <Crown className="size-4" />
+                                        ) : p.cliente ? (
+                                            <Store className="size-4" />
+                                        ) : (
+                                            <ShieldCheck className="size-4" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-[13.5px] font-medium">{p.name}</p>
+                                        <p className="text-muted-foreground text-[12px]">
+                                            {p.acessoTotal ? 'Acesso total' : `${p.permissoes.length} permissões`} · {quem(p, p.utilizadores)}
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
                         ))}
                     </nav>
 
@@ -146,7 +159,7 @@ export default function PerfisIndex({ perfis, catalogo }: { perfis: Perfil[]; ca
                                 <h2 className="text-[16px] font-semibold">{seleccionado.name}</h2>
                                 <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
                                     <Users className="size-3.5" />
-                                    {seleccionado.utilizadores} {seleccionado.utilizadores === 1 ? 'utilizador' : 'utilizadores'} com este perfil
+                                    {quem(seleccionado, seleccionado.utilizadores)} com este perfil
                                 </p>
                             </div>
                             <div className="flex gap-2">
@@ -175,8 +188,24 @@ export default function PerfisIndex({ perfis, catalogo }: { perfis: Perfil[]; ca
                             </div>
                         )}
 
+                        {seleccionado.cliente && (
+                            <div className="bg-muted m-5 mb-0 grid gap-2 rounded-md border p-4 text-[13.5px]">
+                                <p className="flex items-start gap-3">
+                                    <Globe className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+                                    <span>
+                                        O <strong>site público</strong> (apresentação, produtos e contactos) vê-se sempre, mesmo sem conta. Estas
+                                        permissões valem para todas as contas de clientes aprovadas.
+                                    </span>
+                                </p>
+                                <p className="flex items-start gap-3">
+                                    <Lock className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+                                    <span>Uma conta de cliente nunca entra no sistema interno, seja qual for a permissão marcada aqui.</span>
+                                </p>
+                            </div>
+                        )}
+
                         <div className="grid gap-4 p-5 xl:grid-cols-2">
-                            {catalogo.map((modulo) => {
+                            {modulos.map((modulo) => {
                                 const nomes = modulo.permissoes.map((p) => p.nome);
                                 const marcadas = bloqueado ? nomes.length : nomes.filter((n) => form.data.permissoes.includes(n)).length;
                                 const todas = marcadas === nomes.length;

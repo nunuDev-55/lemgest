@@ -60,6 +60,9 @@ Route::middleware(['auth:web'])->group(function () {
             Route::put('produtos/categorias/{categoria}', [CategoriaController::class, 'update'])->name('categorias.update');
             Route::put('produtos/categorias/{categoria}/mover', [CategoriaController::class, 'mover'])->name('categorias.mover');
             Route::delete('produtos/categorias/{categoria}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
+            Route::post('produtos/materiais', [CategoriaController::class, 'guardarMaterial'])->name('materiais.store');
+            Route::put('produtos/materiais/{material}', [CategoriaController::class, 'guardarMaterial'])->name('materiais.update');
+            Route::delete('produtos/materiais/{material}', [CategoriaController::class, 'apagarMaterial'])->name('materiais.destroy');
 
             Route::post('produtos/{produto}/fotos', [ProdutoFotoController::class, 'store'])->name('produtos.fotos.store');
             Route::put('produtos/{produto}/fotos/{foto}/principal', [ProdutoFotoController::class, 'principal'])->name('produtos.fotos.principal');

@@ -105,7 +105,7 @@ export const NAVEGACAO: GrupoNav[] = [
                     { label: 'Disponibilidade por data', href: '/stock/disponibilidade', permissao: 'stock.ver' },
                     { label: 'Movimentos', href: '/stock/movimentos', permissao: 'stock.ver' },
                     { label: 'Inventários', href: '/stock/inventarios', permissao: 'stock.ver' },
-                    { label: 'Categorias', href: '/produtos/categorias' },
+                    { label: 'Categorias e materiais', href: '/produtos/categorias' },
                 ],
             },
             {

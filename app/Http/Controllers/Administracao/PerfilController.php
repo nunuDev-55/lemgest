@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Administracao;
 
 use App\Http\Controllers\Controller;
+use App\Models\ContaCliente;
 use App\Support\Permissoes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class PerfilController extends Controller
     public function index(): Response
     {
         $perfis = Role::query()
+            ->where('guard_name', 'web')
             ->with('permissions:id,name')
             ->withCount('users')
             ->orderByRaw('name = ? desc', [Permissoes::ADMINISTRADOR])
@@ -29,9 +31,27 @@ class PerfilController extends Controller
                 'permissoes' => $role->permissions->pluck('name')->values(),
                 'sistema' => Permissoes::eDeSistema($role->name),
                 'acessoTotal' => $role->name === Permissoes::ADMINISTRADOR,
+                'cliente' => false,
             ]);
 
-        $catalogo = collect(Permissoes::CATALOGO)->map(fn (array $modulo, string $chave) => [
+        // Perfil Cliente: vale para todas as contas de clientes aprovadas da loja
+        $procurar = fn () => Role::where('name', Permissoes::CLIENTE)->where('guard_name', Permissoes::GUARDA_CLIENTE)->with('permissions:id,name')->first();
+        $cliente = $procurar();
+        if ($cliente === null) {
+            Permissoes::sincronizar();
+            $cliente = $procurar();
+        }
+        $perfis->push([
+            'id' => $cliente->id,
+            'name' => $cliente->name,
+            'utilizadores' => ContaCliente::where('estado', ContaCliente::ACTIVA)->count(),
+            'permissoes' => $cliente->permissions->pluck('name')->values(),
+            'sistema' => true,
+            'acessoTotal' => false,
+            'cliente' => true,
+        ]);
+
+        $paraEcra = fn (array $catalogo) => collect($catalogo)->map(fn (array $modulo, string $chave) => [
             'chave' => $chave,
             'label' => $modulo['label'],
             'permissoes' => collect($modulo['permissoes'])
@@ -41,15 +61,16 @@ class PerfilController extends Controller
 
         return Inertia::render('administracao/perfis/index', [
             'perfis' => $perfis,
-            'catalogo' => $catalogo,
+            'catalogo' => $paraEcra(Permissoes::CATALOGO),
+            'catalogoCliente' => $paraEcra(Permissoes::CATALOGO_CLIENTE),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $dados = $request->validate([
-            'name' => ['required', 'string', 'max:50', Rule::unique('roles', 'name')->where('guard_name', 'web')],
-        ], [], ['name' => 'nome do perfil']);
+            'name' => ['required', 'string', 'max:50', Rule::unique('roles', 'name')->where('guard_name', 'web'), Rule::notIn([Permissoes::CLIENTE])],
+        ], ['name.not_in' => 'Cliente é o perfil das contas da loja. Escolha outro nome.'], ['name' => 'nome do perfil']);
 
         $role = Role::create(['name' => $dados['name'], 'guard_name' => 'web']);
 
@@ -64,7 +85,7 @@ class PerfilController extends Controller
 
         $dados = $request->validate([
             'permissoes' => ['present', 'array'],
-            'permissoes.*' => ['string', Rule::in(Permissoes::todas())],
+            'permissoes.*' => ['string', Rule::in($perfil->guard_name === Permissoes::GUARDA_CLIENTE ? Permissoes::todas(Permissoes::CATALOGO_CLIENTE) : Permissoes::todas())],
         ]);
 
         $antes = $perfil->permissions->pluck('name')->sort()->values()->all();

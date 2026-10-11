@@ -20,7 +20,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Área do cliente: os seus dados, as suas reservas e as suas facturas.
+ * Área do cliente: os seus dados e, conforme o perfil Cliente, as suas reservas e as suas facturas.
  * Tudo é filtrado pela ficha de cliente da conta: uma reserva ou factura de outro cliente dá 404.
  */
 class AreaClienteController extends Controller
@@ -33,12 +33,12 @@ class AreaClienteController extends Controller
         $hoje = today()->toDateString();
 
         return Inertia::render('conta/inicio', [
-            'proximas' => $conta->terceiro->reservas()
+            'proximas' => ! $conta->pode('conta.reservas') ? null : $conta->terceiro->reservas()
                 ->whereIn('estado', [Reserva::PEDIDO, Reserva::CONFIRMADA, Reserva::ENTREGUE])
                 ->whereDate('data_recolha', '>=', $hoje)
                 ->orderBy('data_evento')->limit(5)->get()
                 ->map(fn (Reserva $r) => $this->reservaResumo($r)),
-            'porPagar' => $this->facturasDoCliente($conta)->where('estado', Factura::VALIDADA)->orderBy('data_vencimento')->get()
+            'porPagar' => ! $conta->pode('conta.documentos') ? null : $this->facturasDoCliente($conta)->where('estado', Factura::VALIDADA)->orderBy('data_vencimento')->get()
                 ->map(fn (Factura $f) => $this->facturaResumo($f)),
         ]);
     }

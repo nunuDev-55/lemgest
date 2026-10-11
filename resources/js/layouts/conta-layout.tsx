@@ -6,7 +6,7 @@ import { type ReactNode } from 'react';
 
 /** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta */
 export interface DadosConta {
-    cliente: { id: number; nome: string; email: string } | null;
+    cliente: { id: number; nome: string; email: string; permissoes: string[] } | null;
     loja: {
         nome: string;
         nome_comercial: string | null;
@@ -74,16 +74,23 @@ export function ContaEntradaLayout({
     );
 }
 
-const MENU = [
+/** Cada entrada só aparece se o perfil Cliente der a permissão (a protecção verdadeira está nas rotas) */
+const MENU: { label: string; href: string; exacto?: boolean; permissao?: string }[] = [
     { label: 'Início', href: '/conta', exacto: true },
-    { label: 'Reservas', href: '/conta/reservas' },
-    { label: 'Facturas', href: '/conta/facturas' },
+    { label: 'Reservas', href: '/conta/reservas', permissao: 'conta.reservas' },
+    { label: 'Facturas', href: '/conta/facturas', permissao: 'conta.documentos' },
     { label: 'Os meus dados', href: '/conta/dados' },
 ];
+
+export function useClientePode() {
+    const { cliente } = usePage<DadosConta>().props;
+    return (permissao?: string) => !permissao || (cliente?.permissoes ?? []).includes(permissao);
+}
 
 /** Área do cliente: cabeçalho com a marca e o menu; o conteúdo numa coluna central */
 export default function ContaLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
     const { cliente } = usePage<DadosConta>().props;
+    const pode = useClientePode();
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
     const activo = (href: string, exacto?: boolean) => (exacto ? caminho === href : caminho === href || caminho.startsWith(`${href}/`));
 
@@ -106,7 +113,7 @@ export default function ContaLayout({ titulo, children }: { titulo: string; chil
                     </div>
                 </div>
                 <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 md:px-5" aria-label="Área do cliente">
-                    {MENU.map((m) => (
+                    {MENU.filter((m) => pode(m.permissao)).map((m) => (
                         <Link
                             key={m.href}
                             href={m.href}

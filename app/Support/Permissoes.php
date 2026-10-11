@@ -16,6 +16,11 @@ final class Permissoes
 {
     public const ADMINISTRADOR = 'Administrador';
 
+    /** Perfil de todas as contas de clientes da loja (guarda própria: nunca abre o sistema interno) */
+    public const CLIENTE = 'Cliente';
+
+    public const GUARDA_CLIENTE = 'cliente';
+
     /**
      * Permissões agrupadas por módulo, na ordem em que aparecem no ecrã de perfis.
      *
@@ -129,6 +134,31 @@ final class Permissoes
     ];
 
     /**
+     * Permissões do perfil Cliente (contas aprovadas da loja). O site público vê-se sempre, mesmo sem conta.
+     *
+     * @var array<string, array{label: string, permissoes: array<string, string>}>
+     */
+    public const CATALOGO_CLIENTE = [
+        'loja' => [
+            'label' => 'Catálogo e reservas',
+            'permissoes' => [
+                'loja.catalogo' => 'Ver o catálogo com preços e disponibilidade',
+                'loja.reservar' => 'Pedir reservas pelo catálogo',
+            ],
+        ],
+        'conta' => [
+            'label' => 'Área do cliente',
+            'permissoes' => [
+                'conta.reservas' => 'Ver as suas reservas',
+                'conta.documentos' => 'Ver e imprimir as suas facturas e recibos',
+            ],
+        ],
+    ];
+
+    /** O que o perfil Cliente traz de origem: ver o catálogo e reservar (facturas e recibos ligam-se à parte) */
+    public const PERFIL_CLIENTE_INICIAL = ['loja.catalogo', 'loja.reservar', 'conta.reservas'];
+
+    /**
      * Perfis criados na instalação e as permissões que trazem de origem.
      * O Administrador não precisa de lista: tem acesso a tudo (ver AppServiceProvider).
      *
@@ -165,10 +195,10 @@ final class Permissoes
     ];
 
     /** @return list<string> */
-    public static function todas(): array
+    public static function todas(array $catalogo = self::CATALOGO): array
     {
         $todas = [];
-        foreach (self::CATALOGO as $modulo) {
+        foreach ($catalogo as $modulo) {
             array_push($todas, ...array_keys($modulo['permissoes']));
         }
 
@@ -200,12 +230,32 @@ final class Permissoes
             }
         }
 
+        // Perfil Cliente: permissões próprias, na guarda dos clientes
+        $existentes = Permission::where('guard_name', self::GUARDA_CLIENTE)->pluck('name')->all();
+        $novas = array_values(array_diff(self::todas(self::CATALOGO_CLIENTE), $existentes));
+        foreach ($novas as $nome) {
+            Permission::findOrCreate($nome, self::GUARDA_CLIENTE);
+        }
+        $cliente = Role::where('name', self::CLIENTE)->where('guard_name', self::GUARDA_CLIENTE)->first();
+        if ($cliente === null) {
+            Role::create(['name' => self::CLIENTE, 'guard_name' => self::GUARDA_CLIENTE])->givePermissionTo(self::PERFIL_CLIENTE_INICIAL);
+        } else {
+            $cliente->givePermissionTo(array_values(array_intersect(self::PERFIL_CLIENTE_INICIAL, $novas)));
+        }
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     /** Perfis que vêm com o sistema e não se podem apagar nem mudar de nome. */
     public static function eDeSistema(string $perfil): bool
     {
-        return array_key_exists($perfil, self::PERFIS_INICIAIS);
+        return array_key_exists($perfil, self::PERFIS_INICIAIS) || $perfil === self::CLIENTE;
+    }
+
+    /** @return list<string> O que as contas de clientes podem fazer neste momento */
+    public static function doCliente(): array
+    {
+        return Role::where('name', self::CLIENTE)->where('guard_name', self::GUARDA_CLIENTE)->first()
+            ?->permissions->pluck('name')->values()->all() ?? [];
     }
 }

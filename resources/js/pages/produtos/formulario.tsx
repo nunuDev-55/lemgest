@@ -9,7 +9,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler, type ReactNode } from 'react';
 
-type Opcao = { valor: string; label: string };
+type Opcao = { valor: string; label: string; detalhe?: string | null };
 
 interface Produto {
     id: number;
@@ -17,6 +17,7 @@ interface Produto {
     tipo: 'produto' | 'servico';
     nome: string;
     categoria_id: number | null;
+    material_id: number | null;
     descricao: string | null;
     preco: string;
     taxa_iva: string;
@@ -39,6 +40,9 @@ interface Props {
     tipo: 'produto' | 'servico';
     opcoes: { taxasIva: Opcao[]; unidades: Opcao[] };
     categorias: Opcao[];
+    materiais: Opcao[];
+    /** Próximo código automático de cada categoria (id → SOF-004) */
+    proximosCodigos: Record<string, string>;
 }
 
 const sel = 'border-input bg-card focus-visible:ring-ring h-9 w-full max-w-60 rounded-md border px-2 text-sm outline-none focus-visible:ring-2';
@@ -92,13 +96,14 @@ function CampoPreco({
     );
 }
 
-export default function FormularioProduto({ produto: p, tipo, opcoes, categorias }: Props) {
+export default function FormularioProduto({ produto: p, tipo, opcoes, categorias, materiais, proximosCodigos }: Props) {
     const aEditar = p !== null;
     const { data, setData, post, put, processing, errors } = useForm({
         referencia: p?.referencia ?? '',
         tipo: p?.tipo ?? tipo,
         nome: p?.nome ?? '',
         categoria_id: p?.categoria_id ? String(p.categoria_id) : '',
+        material_id: p?.material_id ? String(p.material_id) : '',
         descricao: p?.descricao ?? '',
         taxa_iva: p?.taxa_iva ?? '16.00',
         unidade: p?.unidade ?? (tipo === 'servico' ? 'srv' : 'un'),
@@ -115,6 +120,7 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
         loja_descricao: p?.loja_descricao ?? '',
     });
     const servico = data.tipo === 'servico';
+    const codigoAutomatico = data.categoria_id ? (proximosCodigos[data.categoria_id] ?? null) : null;
     const factorIva = 1 + Number(data.taxa_iva) / 100;
 
     const submeter: FormEventHandler = (e) => {
@@ -132,21 +138,6 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
 
             <form onSubmit={submeter} className="max-w-4xl">
                 <Seccao titulo="Identificação">
-                    <LinhaForm
-                        rotulo="Ref."
-                        htmlFor="referencia"
-                        obrigatorio
-                        ajuda="Código curto e único, sem espaços. Ex.: SOFA-RET, ALM-01, TRANSP."
-                    >
-                        <Input
-                            id="referencia"
-                            value={data.referencia}
-                            onChange={(e) => setData('referencia', e.target.value.toUpperCase())}
-                            className="max-w-60"
-                            autoFocus={!aEditar}
-                        />
-                        <InputError message={errors.referencia} />
-                    </LinhaForm>
                     <LinhaForm rotulo="Tipo">
                         <div className="flex gap-5 pt-2 text-[13.5px]">
                             {(['produto', 'servico'] as const).map((t) => (
@@ -163,15 +154,6 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                             ))}
                         </div>
                     </LinhaForm>
-                    <LinhaForm rotulo="Nome" htmlFor="nome" obrigatorio>
-                        <Input
-                            id="nome"
-                            value={data.nome}
-                            onChange={(e) => setData('nome', e.target.value)}
-                            placeholder={servico ? 'Ex.: Transporte e montagem' : 'Ex.: Sofá rectangular branco'}
-                        />
-                        <InputError message={errors.nome} />
-                    </LinhaForm>
                     <LinhaForm rotulo="Categoria" htmlFor="categoria_id">
                         <div className="flex flex-wrap items-center gap-3">
                             <select
@@ -179,11 +161,13 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                                 value={data.categoria_id}
                                 onChange={(e) => setData('categoria_id', e.target.value)}
                                 className={sel}
+                                autoFocus={!aEditar}
                             >
                                 <option value="">Sem categoria</option>
                                 {categorias.map((c) => (
                                     <option key={c.valor} value={c.valor}>
                                         {c.label}
+                                        {c.detalhe ? ` (${c.detalhe})` : ''}
                                     </option>
                                 ))}
                             </select>
@@ -191,11 +175,59 @@ export default function FormularioProduto({ produto: p, tipo, opcoes, categorias
                                 href="/produtos/categorias"
                                 className="text-muted-foreground hover:text-foreground text-[13px] underline-offset-4 hover:underline"
                             >
-                                Gerir categorias
+                                Gerir categorias e materiais
                             </Link>
                         </div>
                         <InputError message={errors.categoria_id} />
                     </LinhaForm>
+                    <LinhaForm
+                        rotulo="Código"
+                        htmlFor="referencia"
+                        obrigatorio={aEditar || !codigoAutomatico}
+                        ajuda={
+                            aEditar
+                                ? 'Código curto e único, sem espaços.'
+                                : codigoAutomatico
+                                  ? `Deixe vazio para usar ${codigoAutomatico}, o próximo código da categoria.`
+                                  : 'Escolha uma categoria para gerar o código automaticamente, ou escreva um (sem espaços).'
+                        }
+                    >
+                        <Input
+                            id="referencia"
+                            value={data.referencia}
+                            onChange={(e) => setData('referencia', e.target.value.toUpperCase())}
+                            placeholder={aEditar ? undefined : (codigoAutomatico ?? '')}
+                            className="max-w-60 font-mono"
+                        />
+                        <InputError message={errors.referencia} />
+                    </LinhaForm>
+                    <LinhaForm rotulo="Nome" htmlFor="nome" obrigatorio>
+                        <Input
+                            id="nome"
+                            value={data.nome}
+                            onChange={(e) => setData('nome', e.target.value)}
+                            placeholder={servico ? 'Ex.: Montagem e decoração' : 'Ex.: Sofá rectangular branco'}
+                        />
+                        <InputError message={errors.nome} />
+                    </LinhaForm>
+                    {!servico && (
+                        <LinhaForm rotulo="Material" htmlFor="material_id">
+                            <select
+                                id="material_id"
+                                value={data.material_id}
+                                onChange={(e) => setData('material_id', e.target.value)}
+                                className={sel}
+                            >
+                                <option value="">—</option>
+                                {materiais.map((m) => (
+                                    <option key={m.valor} value={m.valor}>
+                                        {m.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.material_id} />
+                        </LinhaForm>
+                    )}
                     <LinhaForm rotulo="Unidade" htmlFor="unidade">
                         <select id="unidade" value={data.unidade} onChange={(e) => setData('unidade', e.target.value)} className={sel}>
                             {opcoes.unidades.map((o) => (

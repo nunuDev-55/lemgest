@@ -55,8 +55,9 @@ class HandleInertiaRequests extends Middleware
                     : $user->getAllPermissions()->pluck('name')->values()->all()),
             ],
             // Área do cliente: quem entrou e os dados públicos da LemServ (só nas páginas /conta)
-            'cliente' => fn () => $request->is('conta', 'conta/*') ? Auth::guard('cliente')->user()?->only(['id', 'nome', 'email']) : null,
-            'loja' => fn () => $request->is('conta', 'conta/*') ? Arr::only(app(Definicoes::class)->empresa(), ['nome', 'nome_comercial', 'telemovel', 'telefone', 'email', 'logotipo']) : null,
+            'cliente' => fn () => $request->is('conta', 'conta/*') && ($conta = Auth::guard('cliente')->user())
+                ? [...$conta->only(['id', 'nome', 'email']), 'permissoes' => Permissoes::doCliente()]
+                : null,            'loja' => fn () => $request->is('conta', 'conta/*') ? Arr::only(app(Definicoes::class)->empresa(), ['nome', 'nome_comercial', 'telemovel', 'telefone', 'email', 'logotipo']) : null,
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),
                 'erro' => fn () => $request->session()->get('erro'),

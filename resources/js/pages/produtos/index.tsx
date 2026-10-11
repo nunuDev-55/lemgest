@@ -30,6 +30,7 @@ interface Linha {
     tipo: 'produto' | 'servico';
     nome: string;
     categoria: string | null;
+    material: string | null;
     foto: string | null;
     preco: string;
     preco_aluguer: string | null;
@@ -57,6 +58,7 @@ interface Props {
     filtros: Record<string, string | undefined>;
     ordenacao: OrdenacaoLista;
     categorias: Opcao[];
+    materiais: Opcao[];
     /** Só para quem vê o stock */
     resumo: { pecas: number; fora: number; esgotados: number; atrasadas: number } | null;
     atrasadas: Atrasada[];
@@ -65,7 +67,7 @@ interface Props {
 const nada = <span className="text-muted-foreground/60">—</span>;
 
 /** Produtos e stock: catálogo, preços e quantidades numa só lista */
-export default function ProdutosEStock({ produtos, filtros, ordenacao, categorias, resumo, atrasadas }: Props) {
+export default function ProdutosEStock({ produtos, filtros, ordenacao, categorias, materiais, resumo, atrasadas }: Props) {
     const pode = usePode();
     const lista = useListaFiltros('/produtos', filtros, ordenacao);
     const comStock = resumo !== null;
@@ -194,6 +196,17 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
                         todos="Todas as categorias"
                     />
                 </div>
+                {materiais.length > 0 && (
+                    <div className="w-36">
+                        <FiltroEscolha
+                            rotulo="material"
+                            valor={lista.valores.material}
+                            onChange={(v) => lista.escolher('material', v)}
+                            opcoes={materiais}
+                            todos="Todos os materiais"
+                        />
+                    </div>
+                )}
                 <div className="w-44">
                     <FiltroEscolha
                         rotulo="estado"
@@ -267,7 +280,9 @@ export default function ProdutosEStock({ produtos, filtros, ordenacao, categoria
                                                 <span className="line-clamp-1 font-medium group-hover:underline">{p.nome}</span>
                                                 <span className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 text-[12.5px]">
                                                     <span>
-                                                        {[p.referencia, p.categoria ?? (produto ? null : 'Serviço')].filter(Boolean).join(' · ')}
+                                                        {[p.referencia, p.categoria ?? (produto ? null : 'Serviço'), p.material]
+                                                            .filter(Boolean)
+                                                            .join(' · ')}
                                                     </span>
                                                     {p.na_loja && (
                                                         <Estado cor="roxo" className="text-muted-foreground text-[12px]">

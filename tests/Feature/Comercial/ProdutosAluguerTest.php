@@ -4,6 +4,7 @@ namespace Tests\Feature\Comercial;
 
 use App\Models\Categoria;
 use App\Models\Factura;
+use App\Models\Material;
 use App\Models\Produto;
 use App\Models\ProdutoFoto;
 use App\Models\Terceiro;
@@ -233,12 +234,15 @@ class ProdutosAluguerTest extends TestCase
     {
         $armazem = $this->utilizadorComPerfil('Armazém');
 
-        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Iluminação', 'descricao' => 'Luzes e candeeiros'])->assertSessionHasNoErrors();
-        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Lounge'])->assertSessionHasErrors('nome');
+        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Iluminação', 'codigo' => 'ilu', 'descricao' => 'Luzes e candeeiros'])->assertSessionHasNoErrors();
+        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Lounge', 'codigo' => 'LOU'])->assertSessionHasErrors(['nome', 'codigo']);
+        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Som'])->assertSessionHasErrors('codigo');
+        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Som', 'codigo' => 'S M'])->assertSessionHasErrors('codigo');
         $ilum = Categoria::where('nome', 'Iluminação')->firstOrFail();
         $this->assertSame(6, $ilum->ordem);
+        $this->assertSame('ILU', $ilum->codigo);
 
-        $this->actingAs($armazem)->put("/produtos/categorias/{$ilum->id}", ['nome' => 'Iluminação e som'])->assertSessionHasNoErrors();
+        $this->actingAs($armazem)->put("/produtos/categorias/{$ilum->id}", ['nome' => 'Iluminação e som', 'codigo' => 'ILU'])->assertSessionHasNoErrors();
         $this->assertSame('Iluminação e som', $ilum->fresh()->nome);
 
         $this->actingAs($armazem)->put("/produtos/categorias/{$ilum->id}/mover", ['direcao' => 'anterior']);
@@ -257,6 +261,39 @@ class ProdutosAluguerTest extends TestCase
             ->has('categorias', 5)
             ->where('categorias.0.produtos', 1)
             ->where('semCategoria', 0));
+    }
+
+    public function test_codigo_automatico_pela_categoria_e_material(): void
+    {
+        $armazem = $this->utilizadorComPerfil('Armazém');
+        $this->actingAs($armazem)->post('/produtos/categorias', ['nome' => 'Sofás', 'codigo' => 'SOF'])->assertSessionHasNoErrors();
+        $sofas = Categoria::where('codigo', 'SOF')->firstOrFail();
+        $napa = Material::where('nome', 'Napa')->firstOrFail();
+        // Um código escrito à mão na mesma série conta para o seguinte
+        Produto::factory()->create(['referencia' => 'SOF-007', 'categoria_id' => $sofas->id]);
+
+        $novo = fn (array $extra = []) => [
+            'tipo' => 'produto', 'nome' => 'Sofá de 3 lugares', 'categoria_id' => $sofas->id, 'material_id' => $napa->id,
+            'taxa_iva' => '16.00', 'unidade' => 'un', 'em_aluguer' => true, 'preco_aluguer' => '1500', 'quantidade_total' => '4', ...$extra,
+        ];
+        $this->actingAs($armazem)->get('/produtos/novo')->assertInertia(fn (Assert $pg) => $pg
+            ->where("proximosCodigos.{$sofas->id}", 'SOF-008')->has('materiais', 3));
+
+        $this->actingAs($armazem)->post('/produtos', $novo())->assertSessionHasNoErrors();
+        $this->actingAs($armazem)->post('/produtos', $novo(['nome' => 'Sofá de 2 lugares']))->assertSessionHasNoErrors();
+        $this->assertSame(['SOF-007', 'SOF-008', 'SOF-009'], Produto::where('categoria_id', $sofas->id)->orderBy('referencia')->pluck('referencia')->all());
+        $this->assertSame('Napa', Produto::where('referencia', 'SOF-008')->first()->material->nome);
+
+        // Código escrito à mão continua a valer; sem categoria, é obrigatório
+        $this->actingAs($armazem)->post('/produtos', $novo(['referencia' => 'sof-esp']))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('produtos', ['referencia' => 'SOF-ESP']);
+        $this->actingAs($armazem)->post('/produtos', $novo(['categoria_id' => '']))->assertSessionHasErrors('referencia');
+
+        // Lista filtra por material; material em uso não se apaga
+        $this->actingAs($armazem)->get("/produtos?material={$napa->id}")->assertInertia(fn (Assert $pg) => $pg->has('produtos.data', 3));
+        $this->actingAs($armazem)->delete("/produtos/materiais/{$napa->id}")->assertSessionHas('erro');
+        $this->actingAs($armazem)->post('/produtos/materiais', ['nome' => 'Veludo'])->assertSessionHasNoErrors();
+        $this->actingAs($armazem)->post('/produtos/materiais', ['nome' => 'Veludo'])->assertSessionHasErrors('nome');
     }
 
     public function test_factura_propoe_o_preco_por_dia_dos_produtos_de_aluguer(): void

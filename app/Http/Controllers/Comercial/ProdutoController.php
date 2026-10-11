@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Comercial\GuardarProdutoRequest;
 use App\Models\Categoria;
 use App\Models\FacturaLinha;
+use App\Models\Material;
 use App\Models\MovimentoStock;
 use App\Models\Produto;
 use App\Models\Reserva;
@@ -34,6 +35,7 @@ class ProdutoController extends Controller
             'tipo' => ['nullable', 'in:produto,servico'],
             'pesquisa' => ['nullable', 'string', 'max:100'],
             'categoria' => ['nullable', 'string', 'max:10'],
+            'material' => ['nullable', 'integer'],
             'estado' => ['nullable', 'in:aluguer,venda,loja,inactivo'],
             'stock' => ['nullable', 'in:fora,atrasado,esgotado,vazio'],
         ]);
@@ -45,10 +47,11 @@ class ProdutoController extends Controller
         $query = Produto::query()
             ->select('produtos.*')
             ->selectRaw('(quantidade_total - quantidade_fora) as disponivel')
-            ->with(['categoria:id,nome', 'fotoPrincipal'])
+            ->with(['categoria:id,nome', 'material:id,nome', 'fotoPrincipal'])
             ->when($filtros['tipo'] ?? null, fn ($q, $t) => $q->where('tipo', $t))
             ->when($filtros['pesquisa'] ?? null, fn ($q, $t) => $q->where(fn ($q) => $q->where('nome', 'like', Pesquisa::like($t))->orWhere('referencia', 'like', Pesquisa::like($t))))
             ->when($filtros['categoria'] ?? null, fn ($q, $c) => $c === 'sem' ? $q->whereNull('categoria_id') : $q->where('categoria_id', (int) $c))
+            ->when($filtros['material'] ?? null, fn ($q, $m) => $q->where('material_id', (int) $m))
             ->when($filtros['estado'] ?? null, fn ($q, $e) => match ($e) {
                 'aluguer' => $q->where('em_aluguer', true),
                 'venda' => $q->where('em_venda', true),
@@ -78,6 +81,7 @@ class ProdutoController extends Controller
             'tipo' => $p->tipo,
             'nome' => $p->nome,
             'categoria' => $p->categoria?->nome,
+            'material' => $p->material?->nome,
             'foto' => $p->fotoPrincipal?->url('mini'),
             'preco' => $p->preco,
             'preco_aluguer' => $p->preco_aluguer,
@@ -95,6 +99,7 @@ class ProdutoController extends Controller
             'filtros' => (object) $filtros,
             'ordenacao' => $ordenacao,
             'categorias' => $this->categorias(),
+            'materiais' => $this->materiais(),
             'resumo' => $verStock ? $this->resumoStock() : null,
             'atrasadas' => $verStock ? $this->saidasAtrasadas() : [],
         ]);
@@ -138,6 +143,8 @@ class ProdutoController extends Controller
             'tipo' => $request->query('tipo') === 'servico' ? 'servico' : 'produto',
             'opcoes' => Opcoes::todas(),
             'categorias' => $this->categorias(),
+            'materiais' => $this->materiais(),
+            'proximosCodigos' => $this->proximosCodigos(),
         ]);
     }
 
@@ -145,6 +152,10 @@ class ProdutoController extends Controller
     {
         $dados = $request->dados();
         $produto = DB::transaction(function () use ($dados, $request, $stock) {
+            // Código automático pela categoria (SOF-001...); a categoria fica presa até gravar, para dois registos não ficarem com o mesmo código
+            if (empty($dados['referencia'])) {
+                $dados['referencia'] = Categoria::whereKey($dados['categoria_id'])->lockForUpdate()->firstOrFail()->proximoCodigoProduto();
+            }
             $produto = new Produto($dados);
             $produto->criado_por = $request->user()->id;
             $produto->save();
@@ -161,7 +172,7 @@ class ProdutoController extends Controller
 
     public function show(Request $request, Produto $produto): Response
     {
-        $produto->load(['categoria:id,nome', 'fotos']);
+        $produto->load(['categoria:id,nome', 'material:id,nome', 'fotos']);
         $usos = FacturaLinha::where('produto_id', $produto->id)->count();
         $comStock = $produto->tipo === 'produto' && $request->user()->can('stock.ver');
 
@@ -172,6 +183,7 @@ class ProdutoController extends Controller
                     'em_aluguer', 'preco_aluguer', 'quantidade_total', 'na_loja', 'loja_destaque', 'loja_ordem', 'loja_descricao',
                 ]),
                 'categoria' => $produto->categoria?->nome,
+                'material' => $produto->material?->nome,
                 'unidade' => Opcoes::UNIDADES[$produto->unidade] ?? $produto->unidade,
                 'preco_com_iva' => $produto->precoComIva(),
                 'preco_aluguer_com_iva' => $produto->precoAluguerComIva(),
@@ -228,12 +240,14 @@ class ProdutoController extends Controller
     {
         return Inertia::render('produtos/formulario', [
             'produto' => $produto->only([
-                'id', 'referencia', 'tipo', 'nome', 'categoria_id', 'descricao', 'preco', 'taxa_iva', 'unidade', 'preco_compra', 'em_venda', 'em_compra',
+                'id', 'referencia', 'tipo', 'nome', 'categoria_id', 'material_id', 'descricao', 'preco', 'taxa_iva', 'unidade', 'preco_compra', 'em_venda', 'em_compra',
                 'em_aluguer', 'preco_aluguer', 'quantidade_total', 'quantidade_fora', 'na_loja', 'loja_destaque', 'loja_ordem', 'loja_descricao',
             ]),
             'tipo' => $produto->tipo,
             'opcoes' => Opcoes::todas(),
             'categorias' => $this->categorias(),
+            'materiais' => $this->materiais(),
+            'proximosCodigos' => $this->proximosCodigos(),
         ]);
     }
 
@@ -263,10 +277,24 @@ class ProdutoController extends Controller
         return to_route('produtos.index')->with('sucesso', "{$ref} apagado.");
     }
 
-    /** @return Collection<int, array{valor: string, label: string}> */
+    /** @return Collection<int, array{valor: string, label: string, detalhe: ?string}> */
     private function categorias(): Collection
     {
-        return Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
-            ->map(fn (Categoria $c) => ['valor' => (string) $c->id, 'label' => $c->nome]);
+        return Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome', 'codigo'])
+            ->map(fn (Categoria $c) => ['valor' => (string) $c->id, 'label' => $c->nome, 'detalhe' => $c->codigo]);
+    }
+
+    /** @return Collection<int, array{valor: string, label: string}> */
+    private function materiais(): Collection
+    {
+        return Material::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
+            ->map(fn (Material $m) => ['valor' => (string) $m->id, 'label' => $m->nome]);
+    }
+
+    /** @return array<string, string> Próximo código de cada categoria, para o formulário mostrar o que vai ser gerado */
+    private function proximosCodigos(): array
+    {
+        return Categoria::whereNotNull('codigo')->get()
+            ->mapWithKeys(fn (Categoria $c) => [(string) $c->id => $c->proximoCodigoProduto()])->all();
     }
 }

@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Notifications\NovaSenhaCliente;
+use App\Support\Permissoes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * Conta de um cliente na loja (guarda "cliente"). Não tem perfis nem permissões:
- * só dá acesso à área do cliente e, mais tarde, à loja.
+ * Conta de um cliente na loja (guarda "cliente"). Todas as contas usam o perfil Cliente
+ * (Administração → Perfis e permissões), que diz o que podem ver no catálogo e na área do cliente.
  *
  * pendente → (a LemServ aprova) activa → suspensa → activa; pendente → recusada.
  */
@@ -62,6 +63,12 @@ class ContaCliente extends Authenticatable
     public function activa(): bool
     {
         return $this->estado === self::ACTIVA && $this->terceiro_id !== null;
+    }
+
+    /** O perfil Cliente dá esta permissão? (catálogo em Permissoes::CATALOGO_CLIENTE) */
+    public function pode(string $permissao): bool
+    {
+        return in_array($permissao, Permissoes::doCliente(), true);
     }
 
     /** Porque é que a conta não pode entrar (na entrada e a meio da sessão) */

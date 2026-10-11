@@ -30,6 +30,7 @@ interface Produto {
     tipo: 'produto' | 'servico';
     nome: string;
     categoria: string | null;
+    material: string | null;
     descricao: string | null;
     preco: string;
     preco_com_iva: string;
@@ -98,7 +99,7 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
             <CabecalhoFicha
                 referencia={p.referencia}
                 titulo={p.nome}
-                subtitulo={[servico ? 'Serviço' : 'Produto', p.categoria].filter(Boolean).join(' · ')}
+                subtitulo={[servico ? 'Serviço' : 'Produto', p.categoria, p.material].filter(Boolean).join(' · ')}
                 estado={
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                         {p.em_aluguer && <Estado cor="verde">Aluguer</Estado>}
@@ -147,6 +148,7 @@ export default function FichaProduto({ produto: p, usos, maximoFotos, stock, cli
                             <Campo rotulo="Nome">{p.nome}</Campo>
                             <Campo rotulo="Tipo">{servico ? 'Serviço' : 'Produto'}</Campo>
                             <Campo rotulo="Categoria">{p.categoria}</Campo>
+                            {!servico && <Campo rotulo="Material">{p.material}</Campo>}
                             <Campo rotulo="Unidade">{p.unidade}</Campo>
                             <Campo rotulo="Usado em facturas">{usos > 0 ? `${usos} linha${usos === 1 ? '' : 's'}` : 'Ainda não'}</Campo>
                         </Campos>
