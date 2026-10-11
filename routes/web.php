@@ -236,6 +236,7 @@ Route::middleware(['auth:web'])->group(function () {
         Route::post('facturas/{factura}/pagamento', [PagamentoController::class, 'store'])->middleware('can:pagamentos.registar')->name('pagamentos.store');
     });
     Route::get('pagamentos', [PagamentoController::class, 'index'])->middleware('can:pagamentos.ver')->name('pagamentos.index');
+    Route::get('pagamentos/{pagamento}/recibo', [PagamentoController::class, 'recibo'])->middleware('can:pagamentos.ver')->name('pagamentos.recibo');
 
     // Compras a fornecedores
     Route::middleware('can:compras.ver')->group(function () {

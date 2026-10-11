@@ -25,22 +25,24 @@ export interface Empresa {
 }
 
 interface Props {
-    titulo: string; // FACTURA, ORÇAMENTO, ENCOMENDA
+    titulo: string; // FACTURA, ORÇAMENTO, RECIBO
     referencia: string;
     marca?: string; // "Original", "PAGA", "ANULADA"...
     destinatario: string; // "Factura para", "Orçamento para"...
     empresa: Empresa;
     terceiro: { nome: string; morada: string | null; cidade: string | null; provincia: string | null; nuit: string | null };
     campos: [string, string][];
-    linhas: LinhaDocumento[];
-    totais: { sem_iva: string; iva: string; total: string; rotuloTotal?: string };
+    linhas?: LinhaDocumento[];
+    totais?: { sem_iva: string; iva: string; total: string; rotuloTotal?: string };
+    /** Em vez das linhas e totais (o recibo tem o seu próprio corpo) */
+    corpo?: ReactNode;
     extraTotais?: ReactNode;
     nota?: string | null;
     /** Texto livre do fim do documento (Configuração → Documentos) */
     rodape?: string | null;
 }
 
-/** Documento em A4 (factura, orçamento, encomenda) para imprimir ou guardar como PDF no navegador. */
+/** Documento em A4 (factura, orçamento, recibo) para imprimir ou guardar como PDF no navegador. */
 export function DocumentoImpresso({
     titulo,
     referencia,
@@ -49,8 +51,9 @@ export function DocumentoImpresso({
     empresa,
     terceiro,
     campos,
-    linhas,
+    linhas = [],
     totais,
+    corpo,
     extraTotais,
     nota,
     rodape,
@@ -150,73 +153,79 @@ export function DocumentoImpresso({
                     </table>
                 </section>
 
-                <table className="mt-6 w-full border-collapse text-[11.5px]">
-                    <thead>
-                        <tr className="bg-[#6e2a63] text-white">
-                            <th className="px-2 py-1.5 text-left font-semibold">Descrição</th>
-                            <th className="px-2 py-1.5 text-right font-semibold">Qtd.</th>
-                            {comDias && <th className="px-2 py-1.5 text-right font-semibold">Dias</th>}
-                            <th className="px-2 py-1.5 text-right font-semibold">{comDias ? 'P.U./dia (sem IVA)' : 'P.U. (sem IVA)'}</th>
-                            <th className="px-2 py-1.5 text-right font-semibold">Desc.</th>
-                            <th className="px-2 py-1.5 text-right font-semibold">IVA</th>
-                            <th className="px-2 py-1.5 text-right font-semibold">Total (sem IVA)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {linhas.map((l) => (
-                            <tr key={l.id} className="border-b border-neutral-200">
-                                <td className="px-2 py-1.5 whitespace-pre-line">{l.descricao}</td>
-                                <td className="px-2 py-1.5 text-right tabular-nums">{formatQuantidade(l.quantidade)}</td>
-                                {comDias && <td className="px-2 py-1.5 text-right tabular-nums">{l.dias ?? 1}</td>}
-                                <td className="px-2 py-1.5 text-right tabular-nums">{formatNumero(l.preco_unitario)}</td>
-                                <td className="px-2 py-1.5 text-right tabular-nums">{Number(l.desconto) > 0 ? `${Number(l.desconto)}%` : ''}</td>
-                                <td className="px-2 py-1.5 text-right tabular-nums">{Number(l.taxa_iva)}%</td>
-                                <td className="px-2 py-1.5 text-right tabular-nums">{formatNumero(l.total_sem_iva)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <section className="mt-5 flex justify-between gap-6">
-                    <div className="flex-1">
-                        <table className="text-[11px]">
+                {corpo ?? (
+                    <>
+                        <table className="mt-6 w-full border-collapse text-[11.5px]">
                             <thead>
-                                <tr className="text-neutral-500">
-                                    <th className="pr-4 text-left font-medium">Taxa IVA</th>
-                                    <th className="pr-4 text-right font-medium">Base</th>
-                                    <th className="text-right font-medium">IVA</th>
+                                <tr className="bg-[#6e2a63] text-white">
+                                    <th className="px-2 py-1.5 text-left font-semibold">Descrição</th>
+                                    <th className="px-2 py-1.5 text-right font-semibold">Qtd.</th>
+                                    {comDias && <th className="px-2 py-1.5 text-right font-semibold">Dias</th>}
+                                    <th className="px-2 py-1.5 text-right font-semibold">{comDias ? 'P.U./dia (sem IVA)' : 'P.U. (sem IVA)'}</th>
+                                    <th className="px-2 py-1.5 text-right font-semibold">Desc.</th>
+                                    <th className="px-2 py-1.5 text-right font-semibold">IVA</th>
+                                    <th className="px-2 py-1.5 text-right font-semibold">Total (sem IVA)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {resumoIva.map(([taxa, v]) => (
-                                    <tr key={taxa}>
-                                        <td className="pr-4">{taxa}%</td>
-                                        <td className="pr-4 text-right tabular-nums">{formatNumero(v.base)}</td>
-                                        <td className="text-right tabular-nums">{formatNumero(v.iva)}</td>
+                                {linhas.map((l) => (
+                                    <tr key={l.id} className="border-b border-neutral-200">
+                                        <td className="px-2 py-1.5 whitespace-pre-line">{l.descricao}</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{formatQuantidade(l.quantidade)}</td>
+                                        {comDias && <td className="px-2 py-1.5 text-right tabular-nums">{l.dias ?? 1}</td>}
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{formatNumero(l.preco_unitario)}</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">
+                                            {Number(l.desconto) > 0 ? `${Number(l.desconto)}%` : ''}
+                                        </td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{Number(l.taxa_iva)}%</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{formatNumero(l.total_sem_iva)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {nota && <p className="mt-4 text-[11px] whitespace-pre-line">{nota}</p>}
-                    </div>
-                    <table className="w-72 text-[12px]">
-                        <tbody>
-                            <tr>
-                                <td className="py-1 text-neutral-600">Total sem IVA</td>
-                                <td className="py-1 text-right tabular-nums">{formatNumero(totais.sem_iva)} MT</td>
-                            </tr>
-                            <tr>
-                                <td className="py-1 text-neutral-600">IVA</td>
-                                <td className="py-1 text-right tabular-nums">{formatNumero(totais.iva)} MT</td>
-                            </tr>
-                            <tr className="border-t-2 border-[#6e2a63] text-sm font-bold">
-                                <td className="py-1.5">{totais.rotuloTotal ?? 'Total'}</td>
-                                <td className="py-1.5 text-right tabular-nums">{formatNumero(totais.total)} MT</td>
-                            </tr>
-                            {extraTotais}
-                        </tbody>
-                    </table>
-                </section>
+
+                        <section className="mt-5 flex justify-between gap-6">
+                            <div className="flex-1">
+                                <table className="text-[11px]">
+                                    <thead>
+                                        <tr className="text-neutral-500">
+                                            <th className="pr-4 text-left font-medium">Taxa IVA</th>
+                                            <th className="pr-4 text-right font-medium">Base</th>
+                                            <th className="text-right font-medium">IVA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {resumoIva.map(([taxa, v]) => (
+                                            <tr key={taxa}>
+                                                <td className="pr-4">{taxa}%</td>
+                                                <td className="pr-4 text-right tabular-nums">{formatNumero(v.base)}</td>
+                                                <td className="text-right tabular-nums">{formatNumero(v.iva)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {nota && <p className="mt-4 text-[11px] whitespace-pre-line">{nota}</p>}
+                            </div>
+                            <table className="w-72 text-[12px]">
+                                <tbody>
+                                    <tr>
+                                        <td className="py-1 text-neutral-600">Total sem IVA</td>
+                                        <td className="py-1 text-right tabular-nums">{formatNumero(totais?.sem_iva)} MT</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-1 text-neutral-600">IVA</td>
+                                        <td className="py-1 text-right tabular-nums">{formatNumero(totais?.iva)} MT</td>
+                                    </tr>
+                                    <tr className="border-t-2 border-[#6e2a63] text-sm font-bold">
+                                        <td className="py-1.5">{totais?.rotuloTotal ?? 'Total'}</td>
+                                        <td className="py-1.5 text-right tabular-nums">{formatNumero(totais?.total)} MT</td>
+                                    </tr>
+                                    {extraTotais}
+                                </tbody>
+                            </table>
+                        </section>
+                    </>
+                )}
 
                 <footer className="mt-10 border-t border-neutral-300 pt-3 text-[10.5px] text-neutral-500">
                     {rodape && <p className="mb-1 whitespace-pre-line">{rodape}</p>}

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Facturacao;
 
+use App\Http\Controllers\Concerns\DadosDocumento;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturacao\RegistarPagamentoRequest;
 use App\Models\Factura;
 use App\Models\Pagamento;
 use App\Services\FacturaService;
+use App\Support\Definicoes;
 use App\Support\Dinheiro;
 use App\Support\Opcoes;
 use App\Support\Ordenacao;
@@ -18,6 +20,8 @@ use Inertia\Response;
 
 class PagamentoController extends Controller
 {
+    use DadosDocumento;
+
     public function __construct(private readonly FacturaService $service) {}
 
     public function index(Request $request): Response
@@ -65,6 +69,15 @@ class PagamentoController extends Controller
             'ordenacao' => $ordenacao,
             'total' => $total,
             'metodos' => Opcoes::paraSelect(Opcoes::METODOS_PAGAMENTO),
+        ]);
+    }
+
+    /** Recibo em A4 para imprimir ou enviar em PDF ao cliente */
+    public function recibo(Pagamento $pagamento): Response
+    {
+        return Inertia::render('pagamentos/recibo', [
+            'recibo' => $this->fichaRecibo($pagamento),
+            'empresa' => app(Definicoes::class)->empresa(),
         ]);
     }
 

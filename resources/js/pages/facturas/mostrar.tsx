@@ -220,7 +220,7 @@ export default function FichaFactura({ factura: f, produtos, clientes, eventos, 
                                     <table className="tabela">
                                         <thead>
                                             <tr>
-                                                <th>Ref.</th>
+                                                <th>Recibo</th>
                                                 <th>Data</th>
                                                 <th>Tipo</th>
                                                 <th className="text-right">Montante</th>
@@ -236,7 +236,18 @@ export default function FichaFactura({ factura: f, produtos, clientes, eventos, 
                                             )}
                                             {f.pagamentos.map((p) => (
                                                 <tr key={p.id}>
-                                                    <td className="font-medium">{p.numero}</td>
+                                                    <td>
+                                                        {/* O recibo abre noutro separador, pronto a imprimir */}
+                                                        <a
+                                                            href={`/pagamentos/${p.id}/recibo`}
+                                                            target="_blank"
+                                                            rel="noopener"
+                                                            className="text-primary font-medium hover:underline"
+                                                            title="Abrir o recibo"
+                                                        >
+                                                            {p.numero}
+                                                        </a>
+                                                    </td>
                                                     <td className="tabular-nums">{formatData(p.data)}</td>
                                                     <td>
                                                         {p.metodo}

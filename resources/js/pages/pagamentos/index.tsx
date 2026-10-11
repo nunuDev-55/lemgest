@@ -89,7 +89,7 @@ export default function PagamentosIndex({ pagamentos, filtros, ordenacao, total,
                         </tr>
                         <tr>
                             <ColunaOrdenavel coluna="numero" ordenacao={ordenacao} onOrdenar={lista.ordenar}>
-                                Ref. pagamento
+                                Recibo
                             </ColunaOrdenavel>
                             <ColunaOrdenavel coluna="data" ordenacao={ordenacao} onOrdenar={lista.ordenar}>
                                 Data
@@ -109,7 +109,17 @@ export default function PagamentosIndex({ pagamentos, filtros, ordenacao, total,
                         {pagamentos.data.length === 0 && <LinhaVazia colunas={7} />}
                         {pagamentos.data.map((p) => (
                             <tr key={p.id}>
-                                <td className="font-semibold">{p.numero}</td>
+                                <td>
+                                    <a
+                                        href={`/pagamentos/${p.id}/recibo`}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="text-primary font-semibold hover:underline"
+                                        title="Abrir o recibo"
+                                    >
+                                        {p.numero}
+                                    </a>
+                                </td>
                                 <td className="tabular-nums">{formatData(p.data)}</td>
                                 <td>
                                     <Link href={`/terceiros/${p.terceiro_id}`} className="hover:text-primary hover:underline">

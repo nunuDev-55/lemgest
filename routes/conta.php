@@ -34,6 +34,7 @@ Route::prefix('conta')->name('conta.')->group(function () {
         Route::middleware(PermissaoCliente::class.':conta.documentos')->group(function () {
             Route::get('facturas', [AreaClienteController::class, 'facturas'])->name('facturas');
             Route::get('facturas/{factura}', [AreaClienteController::class, 'factura'])->name('factura');
+            Route::get('recibos/{pagamento}', [AreaClienteController::class, 'recibo'])->name('recibo');
         });
         Route::get('dados', [AreaClienteController::class, 'dados'])->name('dados');
         Route::put('dados', [AreaClienteController::class, 'guardarDados'])->name('dados.guardar');

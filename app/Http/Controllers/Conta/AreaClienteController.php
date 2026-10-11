@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\DadosDocumento;
 use App\Http\Controllers\Controller;
 use App\Models\ContaCliente;
 use App\Models\Factura;
+use App\Models\Pagamento;
 use App\Models\Reserva;
 use App\Support\Definicoes;
 use App\Support\Opcoes;
@@ -67,17 +68,29 @@ class AreaClienteController extends Controller
                 'total_iva' => (string) $reserva->total_iva,
                 'linhas' => $reserva->linhas->map->paraEcra()->values(),
             ],
-            'facturas' => $reserva->facturas()->where('estado', '!=', Factura::RASCUNHO)->get()
+            // As facturas só aparecem se o perfil Cliente der "facturas e recibos"
+            'facturas' => ! $this->conta($request)->pode('conta.documentos') ? [] : $reserva->facturas()->where('estado', '!=', Factura::RASCUNHO)->get()
                 ->map(fn (Factura $f) => $this->facturaResumo($f)),
         ]);
     }
 
     public function facturas(Request $request): Response
     {
+        $conta = $this->conta($request);
+
         return Inertia::render('conta/facturas', [
-            'facturas' => $this->facturasDoCliente($this->conta($request))->latest('data')->latest('id')
+            'facturas' => $this->facturasDoCliente($conta)->latest('data')->latest('id')
                 ->paginate(15)
                 ->through(fn (Factura $f) => $this->facturaResumo($f)),
+            // Recibos dos pagamentos feitos (os 30 mais recentes)
+            'recibos' => Pagamento::where('terceiro_id', $conta->terceiro_id)->latest('data')->latest('id')->limit(30)->get()
+                ->map(fn (Pagamento $p) => [
+                    'id' => $p->id,
+                    'numero' => $p->numero,
+                    'data' => $p->data->toDateString(),
+                    'valor' => (string) $p->valor,
+                    'metodo' => $p->metodoNome(),
+                ]),
         ]);
     }
 
@@ -92,6 +105,17 @@ class AreaClienteController extends Controller
             'factura' => Arr::except($this->fichaFactura($factura), ['nota_privada', 'validada_por', 'motivo_abandono']),
             'empresa' => $definicoes->empresa(),
             'rodape' => $definicoes->rodape('factura'),
+        ]);
+    }
+
+    /** O mesmo recibo em A4 que a LemServ imprime */
+    public function recibo(Request $request, Pagamento $pagamento): Response
+    {
+        abort_unless($pagamento->terceiro_id === $this->conta($request)->terceiro_id, 404);
+
+        return Inertia::render('pagamentos/recibo', [
+            'recibo' => $this->fichaRecibo($pagamento),
+            'empresa' => app(Definicoes::class)->empresa(),
         ]);
     }
 

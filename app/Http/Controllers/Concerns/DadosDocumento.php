@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Contracts\DocumentoComLinhas;
 use App\Models\Factura;
+use App\Models\Pagamento;
 use App\Models\Produto;
 use App\Models\Terceiro;
+use App\Support\Dinheiro;
+use App\Support\Extenso;
 use App\Support\Opcoes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -162,6 +165,28 @@ trait DadosDocumento
         }
 
         return $lista;
+    }
+
+    /** @return array<string, mixed> Recibo de um pagamento recebido (A4): quem pagou, quanto (também por extenso) e que facturas paga */
+    protected function fichaRecibo(Pagamento $p): array
+    {
+        $p->loadMissing(['terceiro', 'facturas']);
+
+        return [
+            'numero' => $p->numero,
+            'data' => $p->data->toDateString(),
+            'valor' => (string) $p->valor,
+            'valor_extenso' => Extenso::meticais((string) $p->valor),
+            'metodo' => $p->metodoNome(),
+            'numero_documento' => $p->numero_documento,
+            'terceiro' => $this->terceiroResumo($p->terceiro),
+            'facturas' => $p->facturas->map(fn (Factura $f) => [
+                'numero' => $f->numero,
+                'data' => $f->data->toDateString(),
+                'total' => (string) $f->total,
+                'valor' => Dinheiro::arredondar((string) $f->pivot->valor),
+            ])->values(),
+        ];
     }
 
     /** @return array<string, mixed> Ficha da factura (ecrã e impressão; a área do cliente tira as notas internas) */
