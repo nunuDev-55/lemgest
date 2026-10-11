@@ -30,22 +30,11 @@ class FotosProduto
             throw ValidationException::withMessages(['fotos' => "{$ficheiro->getClientOriginalName()}: {$e->getMessage()}"]);
         }
 
-        $disco = Storage::disk('local');
-        $base = Str::lower((string) Str::ulid());
-        $escritos = [];
+        $guardada = Imagem::guardarTamanhos($original, 'produtos', ProdutoFoto::TAMANHOS);
+        $base = $guardada['base'];
 
         try {
-            foreach (ProdutoFoto::TAMANHOS as $tamanho => $maximo) {
-                $reduzida = Imagem::reduzir($original, $maximo);
-                if ($tamanho === 'grande') {
-                    [$largura, $altura] = [imagesx($reduzida), imagesy($reduzida)];
-                }
-                $caminho = "produtos/{$base}-{$tamanho}.webp";
-                $disco->put($caminho, Imagem::webp($reduzida));
-                $escritos[] = $caminho;
-            }
-
-            return DB::transaction(function () use ($produto, $ficheiro, $quem, $base, $largura, $altura, $disco) {
+            return DB::transaction(function () use ($produto, $ficheiro, $quem, $guardada, $base) {
                 // Bloqueia o produto: dois carregamentos ao mesmo tempo não ficam ambos "principal"
                 Produto::whereKey($produto->id)->lockForUpdate()->first();
                 $existentes = $produto->fotos()->count();
@@ -56,9 +45,9 @@ class FotosProduto
                 $foto = $produto->fotos()->make([
                     'ficheiro' => $base,
                     'nome_original' => Str::limit($ficheiro->getClientOriginalName(), 180, ''),
-                    'largura' => $largura,
-                    'altura' => $altura,
-                    'bytes' => $disco->size("produtos/{$base}-grande.webp"),
+                    'largura' => $guardada['largura'],
+                    'altura' => $guardada['altura'],
+                    'bytes' => $guardada['bytes'],
                     'principal' => $existentes === 0,
                     'posicao' => (int) $produto->fotos()->max('posicao') + 1,
                 ]);
@@ -68,7 +57,7 @@ class FotosProduto
                 return $foto;
             });
         } catch (Throwable $e) {
-            $disco->delete($escritos);
+            Storage::disk('local')->delete(array_map(fn (string $t) => "produtos/{$base}-{$t}.webp", array_keys(ProdutoFoto::TAMANHOS)));
             throw $e;
         }
     }

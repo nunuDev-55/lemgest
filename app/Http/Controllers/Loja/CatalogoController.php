@@ -4,14 +4,17 @@ namespace App\Http\Controllers\Loja;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
+use App\Models\FotoSite;
 use App\Models\Material;
 use App\Models\Produto;
 use App\Models\ProdutoFoto;
+use App\Models\User;
 use App\Services\Disponibilidade;
 use App\Support\Pesquisa;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -102,6 +105,22 @@ class CatalogoController extends Controller
         return response()->file(Storage::disk('local')->path($caminho), [
             'Content-Type' => 'image/webp',
             'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /** Fotos do site (galeria, capa): as visíveis para todos; as escondidas só para quem gere o site */
+    public function fotoSite(int $foto, string $tamanho): BinaryFileResponse
+    {
+        abort_unless(array_key_exists($tamanho, FotoSite::TAMANHOS), 404);
+        $f = FotoSite::findOrFail($foto);
+        $equipa = Auth::guard('web')->user();
+        abort_unless($f->visivel || ($equipa instanceof User && $equipa->can('loja.gerir')), 404);
+        $caminho = $f->caminho($tamanho);
+        abort_unless(Storage::disk('local')->exists($caminho), 404);
+
+        return response()->file(Storage::disk('local')->path($caminho), [
+            'Content-Type' => 'image/webp',
+            'Cache-Control' => $f->visivel ? 'public, max-age=86400' : 'private, no-store',
         ]);
     }
 

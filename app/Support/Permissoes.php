@@ -110,6 +110,7 @@ final class Permissoes
             'label' => 'Loja (site e catálogo)',
             'permissoes' => [
                 'loja.ver' => 'Ver a loja como os clientes, com preços e disponibilidade (botão "Ver a loja")',
+                'loja.gerir' => 'Gerir as fotos do site (galeria de eventos e capa)',
             ],
         ],
         'resultados' => [
@@ -187,7 +188,7 @@ final class Permissoes
             'compras.ver', 'compras.criar', 'compras.validar', 'compras.receber', 'compras.pagar', 'despesas.ver', 'despesas.registar',
             'stock.ver', 'stock.movimentar', 'stock.inventariar',
             'reservas.ver', 'reservas.criar', 'reservas.confirmar', 'reservas.entregar',
-            'resultados.ver', 'loja.ver',
+            'resultados.ver', 'loja.ver', 'loja.gerir',
         ],
         'Comercial' => [
             'reservas.ver', 'reservas.criar', 'reservas.confirmar', 'terceiros.contas',

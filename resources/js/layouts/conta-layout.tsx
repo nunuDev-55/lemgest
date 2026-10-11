@@ -1,5 +1,5 @@
 import { Notificacoes } from '@/components/notificacoes';
-import { EVENTOS, fotoEvento } from '@/components/site';
+import { useFotosSite } from '@/components/site';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, LogOut } from 'lucide-react';
@@ -8,9 +8,6 @@ import SiteLayout, { useSempreClaro, type DadosSite } from './site-layout';
 
 /** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta (os mesmos do site) */
 export type DadosConta = DadosSite;
-
-// Foto ao lado dos formulários de entrada e registo
-const FOTO = EVENTOS[1];
 
 /** Entrar, registar e recuperar a senha: formulário à esquerda e uma foto de evento à direita */
 export function ContaEntradaLayout({
@@ -28,6 +25,8 @@ export function ContaEntradaLayout({
     const { loja } = usePage<DadosConta>().props;
     const nome = loja?.nome_comercial ?? 'LemServ';
     const telefone = loja?.telemovel ?? loja?.telefone;
+    // Foto ao lado dos formulários: a primeira da capa do site
+    const foto = useFotosSite().capa[0] ?? null;
 
     return (
         <div className="site bg-background text-foreground grid min-h-screen lg:grid-cols-[1fr_1.05fr]">
@@ -57,7 +56,7 @@ export function ContaEntradaLayout({
 
             <div className="relative hidden p-4 lg:block">
                 <div className="relative h-full overflow-hidden rounded-[28px]">
-                    <img src={fotoEvento(FOTO.n, 'g')} alt={FOTO.alt} className="absolute inset-0 size-full object-cover" />
+                    {foto && <img src={foto.grande} alt={foto.legenda} className="absolute inset-0 size-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                     <div className="absolute inset-x-10 bottom-10 text-white">
                         <p className="font-titulo text-[34px] leading-[1.1]">Do primeiro sofá à última almofada.</p>

@@ -1,5 +1,5 @@
 import { ListaFacturas, ListaReservas, type FacturaCliente, type ReservaCliente } from '@/components/conta';
-import { EVENTOS, fotoEvento } from '@/components/site';
+import { useFotosSite } from '@/components/site';
 import ContaLayout, { useClientePode, type DadosConta } from '@/layouts/conta-layout';
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
@@ -8,6 +8,7 @@ import { ArrowRight, ShoppingBag } from 'lucide-react';
 export default function InicioCliente({ proximas, porPagar }: { proximas: ReservaCliente[] | null; porPagar: FacturaCliente[] | null }) {
     const { cliente, loja, carrinho } = usePage<DadosConta>().props;
     const pode = useClientePode();
+    const foto = useFotosSite().pequena;
     const primeiroNome = cliente?.nome.split(' ')[0];
     const contacto = loja?.telemovel ?? loja?.telefone;
 
@@ -45,7 +46,7 @@ export default function InicioCliente({ proximas, porPagar }: { proximas: Reserv
                             )}
                         </div>
                     </div>
-                    <img src={fotoEvento(EVENTOS[6].n)} alt="" className="hidden h-full w-full object-cover sm:block" />
+                    {foto && <img src={foto.media} alt="" className="hidden h-full w-full object-cover sm:block" />}
                 </section>
             )}
             {proximas && (

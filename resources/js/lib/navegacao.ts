@@ -2,6 +2,7 @@ import {
     CalendarDays,
     FileSignature,
     History,
+    Images,
     LayoutDashboard,
     Package,
     Receipt,
@@ -137,6 +138,13 @@ export const NAVEGACAO: GrupoNav[] = [
                     { label: 'Documentos', href: '/administracao/configuracao/documentos' },
                     { label: 'Numeração', href: '/administracao/configuracao/numeracao' },
                 ],
+            },
+            {
+                label: 'Site e galeria',
+                href: '/administracao/site',
+                icone: Images,
+                permissao: 'loja.gerir',
+                prefixos: ['/administracao/site'],
             },
             {
                 label: 'Utilizadores',

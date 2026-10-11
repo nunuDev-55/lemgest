@@ -3,7 +3,10 @@
 namespace App\Support;
 
 use GdImage;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 /**
  * Tratamento de fotos com a extensão GD do PHP: abrir JPG/PNG/WebP, endireitar as fotos
@@ -63,6 +66,39 @@ final class Imagem
         imagecopyresampled($nova, $imagem, 0, 0, 0, 0, $novaLargura, $novaAltura, $largura, $altura);
 
         return $nova;
+    }
+
+    /**
+     * Guarda a foto no disco "local" em vários tamanhos WebP: {pasta}/{ulid}-{tamanho}.webp.
+     * Se alguma escrita falhar, apaga as que já tinha feito.
+     *
+     * @param  array<string, int>  $tamanhos  nome => lado maior em píxeis (o primeiro é o maior)
+     * @return array{base: string, largura: int, altura: int, bytes: int}
+     */
+    public static function guardarTamanhos(GdImage $original, string $pasta, array $tamanhos): array
+    {
+        $disco = Storage::disk('local');
+        $base = Str::lower((string) Str::ulid());
+        $escritos = [];
+        $largura = $altura = $bytes = 0;
+
+        try {
+            foreach ($tamanhos as $tamanho => $maximo) {
+                $reduzida = self::reduzir($original, $maximo);
+                $conteudo = self::webp($reduzida);
+                if ($escritos === []) {
+                    [$largura, $altura, $bytes] = [imagesx($reduzida), imagesy($reduzida), strlen($conteudo)];
+                }
+                $caminho = "{$pasta}/{$base}-{$tamanho}.webp";
+                $disco->put($caminho, $conteudo);
+                $escritos[] = $caminho;
+            }
+        } catch (Throwable $e) {
+            $disco->delete($escritos);
+            throw $e;
+        }
+
+        return ['base' => $base, 'largura' => $largura, 'altura' => $altura, 'bytes' => $bytes];
     }
 
     /** Conteúdo da imagem em WebP */

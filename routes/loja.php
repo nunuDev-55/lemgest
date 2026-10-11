@@ -18,6 +18,7 @@ Route::middleware('throttle:loja')->group(function () {
     Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
     Route::get('catalogo/{produto}', [CatalogoController::class, 'mostrar'])->whereNumber('produto')->name('catalogo.mostrar');
     Route::get('catalogo/fotos/{foto}/{tamanho}', [CatalogoController::class, 'foto'])->whereNumber('foto')->name('catalogo.foto');
+    Route::get('catalogo/galeria/{foto}/{tamanho}', [CatalogoController::class, 'fotoSite'])->whereNumber('foto')->name('catalogo.galeria');
 
     // Reservar: só clientes com conta activa e "Pedir reservas pelo catálogo" no perfil Cliente
     Route::middleware(['auth:cliente', GarantirContaActiva::class, PermissaoCliente::class.':loja.reservar'])

@@ -1,4 +1,4 @@
-import { CartaoProduto, Etiqueta, EVENTOS, Foto, fotoEvento, TituloSeccao, type ProdutoLoja } from '@/components/site';
+import { CartaoProduto, Etiqueta, Foto, TituloSeccao, useFotosSite, type ProdutoLoja } from '@/components/site';
 import { VisorFotos } from '@/components/visor-fotos';
 import SiteLayout, { linkWhatsApp, useSite } from '@/layouts/site-layout';
 import { formatNumero, formatValor } from '@/lib/format';
@@ -35,24 +35,21 @@ const PASSOS = [
     { icone: Truck, titulo: 'A LemServ confirma', texto: 'Confirmamos a disponibilidade e a taxa de transporte, entregamos e recolhemos.' },
 ];
 
-// Fotos escolhidas para cada parte da página (a capa vai alternando entre as três)
-const CAPAS = [EVENTOS[0], EVENTOS[5], EVENTOS[3]];
-const CAPA_PEQUENA = EVENTOS[6];
-const BANNER = EVENTOS[3];
-const GALERIA = [EVENTOS[1], EVENTOS[9], EVENTOS[7], EVENTOS[15], EVENTOS[2], EVENTOS[14], EVENTOS[11], EVENTOS[5]];
-
 /** Página inicial pública da LemServ */
 export default function Inicio({ destaques, categorias, servicos, transporte }: Props) {
     const { loja, cliente } = useSite();
+    // Fotos geridas em Administração → Site e galeria (a capa vai alternando entre as marcadas)
+    const { capa: CAPAS, pequena: CAPA_PEQUENA, banner: BANNER, galeria: GALERIA, porIndice } = useFotosSite();
     const [capa, setCapa] = useState(0);
     const [visor, setVisor] = useState<number | null>(null);
 
     // A capa muda de foto a cada 6 segundos (não muda para quem pediu menos movimento no sistema)
     useEffect(() => {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (CAPAS.length < 2) return;
         const t = setInterval(() => setCapa((c) => (c + 1) % CAPAS.length), 6000);
         return () => clearInterval(t);
-    }, []);
+    }, [CAPAS.length]);
 
     const perguntas = [
         {
@@ -126,9 +123,9 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                     <div className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-[var(--areia)] lg:aspect-[5/6]">
                         {CAPAS.map((f, i) => (
                             <img
-                                key={f.n}
-                                src={fotoEvento(f.n, 'g')}
-                                alt={i === capa ? f.alt : ''}
+                                key={f.id}
+                                src={f.grande}
+                                alt={i === capa ? f.legenda : ''}
                                 aria-hidden={i !== capa}
                                 fetchPriority={i === 0 ? 'high' : 'low'}
                                 className={cn(
@@ -140,7 +137,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                         <div className="absolute top-5 right-5 flex gap-1.5">
                             {CAPAS.map((f, i) => (
                                 <button
-                                    key={f.n}
+                                    key={f.id}
                                     type="button"
                                     onClick={() => setCapa(i)}
                                     aria-label={`Mostrar a foto ${i + 1}`}
@@ -153,7 +150,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                         href="/catalogo"
                         className="absolute bottom-5 left-5 flex max-w-[260px] items-center gap-3 rounded-2xl bg-white/95 p-2.5 pr-4 shadow-lg backdrop-blur sm:-left-8"
                     >
-                        <img src={fotoEvento(CAPA_PEQUENA.n)} alt="" className="size-16 rounded-xl object-cover" />
+                        {CAPA_PEQUENA && <img src={CAPA_PEQUENA.media} alt="" className="size-16 rounded-xl object-cover" />}
                         <span className="text-[13px] leading-snug">
                             <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">Colecção</span>
                             <span className="font-titulo text-[16px]">Sofás curvos e bouclé</span>
@@ -198,7 +195,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                         {categorias.slice(0, 4).map((c, i) => (
                             <Link key={c.id} href={`/catalogo?categoria=${c.id}`} className="group relative aspect-[3/4] overflow-hidden rounded-2xl">
                                 <Foto
-                                    src={c.foto ?? fotoEvento(EVENTOS[(i * 5 + 4) % EVENTOS.length].n)}
+                                    src={c.foto ?? porIndice(i * 5 + 4)?.media ?? null}
                                     alt={c.nome}
                                     className="transition-transform duration-500 group-hover:scale-[1.04]"
                                 />
@@ -232,7 +229,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                             </p>
                         </div>
                         <div className="aspect-square md:aspect-auto">
-                            <Foto src={destaque.foto ?? fotoEvento(EVENTOS[12].n, 'g')} alt={destaque.nome} />
+                            <Foto src={destaque.foto ?? porIndice(12)?.grande ?? null} alt={destaque.nome} />
                         </div>
                         <div className="flex flex-col justify-center gap-3 p-8 md:p-10">
                             <p className="text-muted-foreground text-[12px] tracking-[0.12em] uppercase">
@@ -276,7 +273,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
             {/* Banner */}
             <section className="mx-auto max-w-7xl px-4 pt-20 md:px-8">
                 <div className="relative overflow-hidden rounded-[28px] bg-[var(--tinta)] text-white">
-                    <img src={fotoEvento(BANNER.n, 'g')} alt={BANNER.alt} className="absolute inset-0 size-full object-cover opacity-55" />
+                    {BANNER && <img src={BANNER.grande} alt={BANNER.legenda} className="absolute inset-0 size-full object-cover opacity-55" />}
                     <div className="absolute inset-0 bg-gradient-to-r from-[var(--tinta)] via-[var(--tinta)]/70 to-transparent" />
                     <div className="relative max-w-xl p-8 md:p-14">
                         <Etiqueta className="text-white/80">Casamentos · Aniversários · Empresas</Etiqueta>
@@ -313,15 +310,15 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                 <div className="columns-2 gap-4 md:columns-4 [&>*]:mb-4">
                     {GALERIA.map((f, i) => (
                         <button
-                            key={f.n}
+                            key={f.id}
                             type="button"
                             onClick={() => setVisor(i)}
                             className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl bg-[var(--areia)]"
-                            aria-label={`Ver em grande: ${f.alt}`}
+                            aria-label={`Ver em grande: ${f.legenda}`}
                         >
                             <img
-                                src={fotoEvento(f.n)}
-                                alt={f.alt}
+                                src={f.media}
+                                alt={f.legenda}
                                 loading="lazy"
                                 className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                             />
@@ -331,7 +328,7 @@ export default function Inicio({ destaques, categorias, servicos, transporte }: 
                         </button>
                     ))}
                 </div>
-                <VisorFotos fotos={GALERIA.map((f) => ({ src: fotoEvento(f.n, 'g'), alt: f.alt }))} indice={visor} onMudar={setVisor} />
+                <VisorFotos fotos={GALERIA.map((f) => ({ src: f.grande, alt: f.legenda }))} indice={visor} onMudar={setVisor} />
             </section>
 
             {/* Como reservar */}

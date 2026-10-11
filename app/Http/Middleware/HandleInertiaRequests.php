@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\Loja\PedidoController;
+use App\Models\FotoSite;
 use App\Support\Definicoes;
 use App\Support\Permissoes;
 use App\Support\Publico;
@@ -71,6 +72,7 @@ class HandleInertiaRequests extends Middleware
                 : null,
             // Equipa a ver a loja a partir do LemGest (botão "Ver a loja")
             'equipa' => fn () => Publico::caminho($request) && $user?->active && $user->can('loja.ver') ? ['nome' => $user->name] : null,
+            'fotosSite' => fn () => Publico::caminho($request) ? FotoSite::where('visivel', true)->ordenadas()->get()->map->paraSite()->values() : [],
             'carrinho' => fn () => Publico::caminho($request) ? PedidoController::pecasNoCarrinho($request) : 0,
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),

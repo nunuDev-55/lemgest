@@ -1,6 +1,6 @@
 import { formatNumero } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, ImageOff } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
@@ -16,37 +16,32 @@ export interface ProdutoLoja {
     disponivel?: number | null;
 }
 
-/** Fotos de eventos montados pela LemServ (public/img/eventos, em 1280 e 800 px) */
-export interface FotoEvento {
-    n: string;
-    alt: string;
-    vertical: boolean;
+/** Foto de evento gerida em Administração → Site e galeria */
+export interface FotoSite {
+    id: number;
+    legenda: string;
+    grande: string;
+    media: string;
+    capa: boolean;
+    horizontal: boolean;
 }
 
-export const EVENTOS: FotoEvento[] = [
-    { n: '01-casamento-jardim', alt: 'Casamento no jardim, com arco de flores e sofás curvos brancos', vertical: true },
-    { n: '02-tenda-branca', alt: 'Tenda branca com cortinas e lounge em bouclé no jardim', vertical: true },
-    { n: '03-tenda-noite', alt: 'Lounge à noite debaixo de uma tenda com lustres', vertical: true },
-    { n: '04-vista-mar', alt: 'Lounge com vista para o mar, poltronas brancas e puffs vermelhos', vertical: false },
-    { n: '05-mesas-altas-mar', alt: 'Mesas altas brancas e bancos num terraço junto ao mar', vertical: false },
-    { n: '06-tenda-vidro', alt: 'Sofás curvos creme numa tenda de vidro', vertical: false },
-    { n: '07-sofa-curvo-creme', alt: 'Sofá curvo, puffs e mesas espelhadas em tons creme', vertical: false },
-    { n: '08-varanda-boucle', alt: 'Lounge em bouclé branco numa varanda com plantas', vertical: true },
-    { n: '09-esplanada-vermelho', alt: 'Esplanada com sofás bouclé e almofadas vermelhas', vertical: true },
-    { n: '10-veludo-azul-verde', alt: 'Sofás brancos com mesas de veludo azul e verde', vertical: false },
-    { n: '11-jardim-amarelo-azul', alt: 'Sofá branco com almofadas amarelas e azuis no jardim', vertical: false },
-    { n: '12-evento-empresa', alt: 'Evento de empresa com sofás brancos e mesa vermelha', vertical: true },
-    { n: '13-conjunto-branco', alt: 'Conjunto branco com mesa de centro verde-oliva', vertical: false },
-    { n: '14-rosa-veludo', alt: 'Sofá branco com almofadas e mesas de veludo rosa', vertical: true },
-    { n: '15-aniversario-rosa', alt: 'Aniversário em rosa e amarelo no jardim', vertical: false },
-    { n: '16-piscina-preto', alt: 'Sofá preto curvo junto à piscina, com almofadas douradas', vertical: false },
-    { n: '17-sala-preto-branco', alt: 'Sala com sofás brancos, almofadas pretas e mesas lacadas', vertical: true },
-    { n: '18-tenda-lilas', alt: 'Tenda branca com almofadas lilás e rosa', vertical: true },
-    { n: '19-lounge-rosa-amarelo', alt: 'Lounge colorido com puffs rosa e amarelos', vertical: false },
-    { n: '20-terraco-relva', alt: 'Puffs e sofás brancos num terraço relvado', vertical: true },
-];
-
-export const fotoEvento = (n: string, tamanho: 'g' | 'm' = 'm') => `/img/eventos/${n}-${tamanho}.webp`;
+/** As fotos visíveis do site, pela ordem escolhida no LemGest, e as que servem cada parte da página */
+export function useFotosSite() {
+    const fotos = usePage<{ fotosSite?: FotoSite[] }>().props.fotosSite ?? [];
+    const marcadas = fotos.filter((f) => f.capa);
+    const capa = (marcadas.length > 0 ? marcadas : fotos).slice(0, 3);
+    const outras = fotos.filter((f) => !capa.includes(f));
+    return {
+        todas: fotos,
+        capa,
+        pequena: outras[0] ?? fotos[0] ?? null,
+        banner: outras.find((f) => f.horizontal) ?? fotos.find((f) => f.horizontal) ?? fotos[0] ?? null,
+        galeria: fotos.slice(0, 12),
+        /** Foto n.º i, às voltas (para dar uma foto a cada categoria sem foto) */
+        porIndice: (i: number) => (fotos.length > 0 ? fotos[i % fotos.length] : null),
+    };
+}
 
 /** Foto que aparece com um esbatimento suave quando acaba de carregar */
 export function Foto({ src, alt, className, prioridade }: { src: string | null; alt: string; className?: string; prioridade?: boolean }) {

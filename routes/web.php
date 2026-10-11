@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Administracao\AuditoriaController;
 use App\Http\Controllers\Administracao\ConfiguracaoController;
+use App\Http\Controllers\Administracao\FotoSiteController;
 use App\Http\Controllers\Administracao\PerfilController;
 use App\Http\Controllers\Administracao\UtilizadorController;
 use App\Http\Controllers\Aluguer\ReservaController;
@@ -304,6 +305,14 @@ Route::middleware(['auth:web'])->group(function () {
 
     // Administração
     Route::prefix('administracao')->group(function () {
+        // Site e galeria: fotos de eventos do site público
+        Route::middleware('can:loja.gerir')->prefix('site')->name('site.fotos.')->controller(FotoSiteController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('fotos', 'store')->name('store');
+            Route::put('fotos/{foto}', 'update')->name('update');
+            Route::put('fotos/{foto}/mover', 'mover')->name('mover');
+            Route::delete('fotos/{foto}', 'destroy')->name('destroy');
+        });
         Route::get('utilizadores', [UtilizadorController::class, 'index'])
             ->middleware('can:utilizadores.ver')->name('utilizadores.index');
         Route::post('utilizadores', [UtilizadorController::class, 'store'])
