@@ -47,7 +47,7 @@ class ReservaService extends DocumentoComercialService
     }
 
     /** @param array<string, mixed> $dados */
-    public function criar(array $dados, User $autor, string $origem = 'balcao'): Reserva
+    public function criar(array $dados, ?User $autor, string $origem = 'balcao'): Reserva
     {
         $this->garantirTerceiro((int) $dados['terceiro_id'], aceitaPotencial: true);
 
@@ -56,7 +56,7 @@ class ReservaService extends DocumentoComercialService
             $r->numero = $this->numeracao->proximo('reserva');
             $r->estado = Reserva::PEDIDO;
             $r->origem = $origem;
-            $r->criado_por = $autor->id;
+            $r->criado_por = $autor?->id; // null nos pedidos feitos pelo cliente no catálogo
             $r->save();
             $this->sincronizarTransporte($r);
 

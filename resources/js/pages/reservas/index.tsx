@@ -158,6 +158,11 @@ export default function Reservas({ reservas, filtros, ordenacao, resumo }: Props
                                 <td className="text-right font-medium whitespace-nowrap tabular-nums">{formatNumero(r.total)}</td>
                                 <td>
                                     <div className="flex flex-wrap gap-x-3 gap-y-1">
+                                        {r.origem === 'loja' && (
+                                            <span className="text-primary text-[12px] font-medium" title="Pedido feito pelo cliente no catálogo">
+                                                Loja
+                                            </span>
+                                        )}
                                         <EstadoReserva estado={r.estado} atrasada={r.atrasada} />
                                         {r.facturada && <Estado cor="verde">Facturada</Estado>}
                                     </div>

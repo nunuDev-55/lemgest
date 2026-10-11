@@ -14,7 +14,7 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center px-4 py-10">
             <div className="w-full max-w-[380px]">
                 <div className="mb-8 flex flex-col items-center gap-5 text-center">
-                    <Link href={route('home')} className="flex items-center gap-2.5" aria-label="LemServ">
+                    <Link href="/painel" className="flex items-center gap-2.5" aria-label="LemServ">
                         <AppLogoIcon className="size-10" />
                         <span className="flex flex-col items-start leading-tight">
                             <span className="text-[16px] font-semibold">LemServ</span>

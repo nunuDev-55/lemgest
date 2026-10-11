@@ -5,8 +5,11 @@ namespace App\Providers;
 use App\Models\User;
 use App\Support\Definicoes;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Site e catálogo públicos: no máximo 120 pedidos por minuto de cada endereço (abusos e robôs)
+        RateLimiter::for('loja', fn (Request $request) => Limit::perMinute(120)->by((string) $request->ip()));
+
         // O perfil Administrador tem todas as permissões, incluindo as de módulos futuros.
         // Só a equipa tem perfis; uma conta de cliente nunca passa nas permissões
         Gate::before(fn ($user) => $user instanceof User && $user->isAdministrador() ? true : null);

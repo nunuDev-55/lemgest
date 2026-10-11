@@ -15,6 +15,8 @@ export interface ReservaResumo {
     tema: string | null;
     transporte: boolean;
     taxa_transporte?: string | null;
+    /** balcao ou loja (pedido feito pelo cliente no catálogo) */
+    origem?: string;
     total: string;
     atrasada: boolean;
     cliente?: string;

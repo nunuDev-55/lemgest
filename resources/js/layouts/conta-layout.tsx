@@ -77,6 +77,7 @@ export function ContaEntradaLayout({
 /** Cada entrada só aparece se o perfil Cliente der a permissão (a protecção verdadeira está nas rotas) */
 const MENU: { label: string; href: string; exacto?: boolean; permissao?: string }[] = [
     { label: 'Início', href: '/conta', exacto: true },
+    { label: 'Catálogo', href: '/catalogo', permissao: 'loja.catalogo' },
     { label: 'Reservas', href: '/conta/reservas', permissao: 'conta.reservas' },
     { label: 'Facturas e recibos', href: '/conta/facturas', permissao: 'conta.documentos' },
     { label: 'Os meus dados', href: '/conta/dados' },

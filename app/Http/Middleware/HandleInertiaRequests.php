@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Loja\PedidoController;
 use App\Support\Definicoes;
 use App\Support\Permissoes;
+use App\Support\Publico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,12 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /** As páginas públicas (site, catálogo, área do cliente) usam uma página base sem a lista das rotas internas */
+    public function rootView(Request $request): string
+    {
+        return Publico::caminho($request) ? 'loja' : 'app';
+    }
 
     /**
      * Determines the current asset version.
@@ -54,10 +62,14 @@ class HandleInertiaRequests extends Middleware
                     ? Permissoes::todas()
                     : $user->getAllPermissions()->pluck('name')->values()->all()),
             ],
-            // Área do cliente: quem entrou e os dados públicos da LemServ (só nas páginas /conta)
-            'cliente' => fn () => $request->is('conta', 'conta/*') && ($conta = Auth::guard('cliente')->user())
+            // Site, catálogo e área do cliente: quem entrou (conta activa), os contactos públicos da LemServ e a reserva em curso
+            'cliente' => fn () => Publico::caminho($request) && ($conta = Auth::guard('cliente')->user()) && $conta->activa()
                 ? [...$conta->only(['id', 'nome', 'email']), 'permissoes' => Permissoes::doCliente()]
-                : null,            'loja' => fn () => $request->is('conta', 'conta/*') ? Arr::only(app(Definicoes::class)->empresa(), ['nome', 'nome_comercial', 'telemovel', 'telefone', 'email', 'logotipo']) : null,
+                : null,
+            'loja' => fn () => Publico::caminho($request)
+                ? Arr::only(app(Definicoes::class)->empresa(), ['nome', 'nome_comercial', 'telemovel', 'telefone', 'email', 'morada', 'cidade', 'logotipo'])
+                : null,
+            'carrinho' => fn () => Publico::caminho($request) ? PedidoController::pecasNoCarrinho($request) : 0,
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),
                 'erro' => fn () => $request->session()->get('erro'),

@@ -25,4 +25,15 @@ return [
      * (e repor a entrada "Notas de crédito" em resources/js/lib/navegacao.ts).
      */
     'notas_credito' => (bool) env('LEMGEST_NOTAS_CREDITO', false),
+
+    /*
+     * Publicação do site na internet (decisão D10). Vazio = instalação local, sem restrições.
+     * - LEMGEST_DOMINIO_PUBLICO=lemserv.co.mz: nesse endereço só abrem o site, o catálogo e a área do cliente.
+     * - LEMGEST_REDES_SISTEMA=192.168.1.0/24: o sistema interno só abre a partir destas redes (separadas por vírgulas).
+     *   Atenção: com um túnel ou proxy na própria máquina os pedidos chegam de 127.0.0.1; aí use o domínio público.
+     */
+    'publicacao' => [
+        'dominio_publico' => env('LEMGEST_DOMINIO_PUBLICO'),
+        'redes_sistema' => array_values(array_filter(array_map('trim', explode(',', (string) env('LEMGEST_REDES_SISTEMA', ''))))),
+    ],
 ];

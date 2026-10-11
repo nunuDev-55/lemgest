@@ -29,8 +29,7 @@ use App\Http\Controllers\Stock\MovimentoStockController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// A página inicial leva ao painel (ou ao login, se não houver sessão).
-Route::redirect('/', '/painel')->name('home');
+// O site público (/) e o catálogo estão em routes/loja.php; a equipa entra pelo /painel (ou /login).
 
 // Ecrã de arranque da aplicação: "o sistema e a base de dados estão prontos?" (sem sessão nem cookies)
 Route::get('estado/pronto.png', EstadoController::class)->withoutMiddleware('web')->name('estado.pronto');
@@ -341,3 +340,4 @@ Route::get('empresa/logotipo', [ConfiguracaoController::class, 'logotipo'])->nam
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/conta.php';
+require __DIR__.'/loja.php';

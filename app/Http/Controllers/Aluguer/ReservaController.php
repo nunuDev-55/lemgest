@@ -308,6 +308,7 @@ class ReservaController extends Controller
             'tema' => $r->tema,
             'transporte' => $r->transporte,
             'taxa_transporte' => $r->taxa_transporte,
+            'origem' => $r->origem,
             'total' => (string) $r->total,
             'atrasada' => $r->recolhaAtrasada(),
         ];

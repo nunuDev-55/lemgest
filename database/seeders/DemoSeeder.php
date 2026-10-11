@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Categoria;
+use App\Models\Despesa;
 use App\Models\Factura;
+use App\Models\Material;
 use App\Models\Orcamento;
 use App\Models\Produto;
 use App\Models\Reserva;
@@ -80,7 +82,7 @@ class DemoSeeder extends Seeder
             ], $admin);
         }
 
-        $galp = $terceiros->criar(['nome' => 'Galp Moçambique', 'e_fornecedor' => true, 'tipo_entidade' => 'empresa', 'nuit' => '400033221', 'cidade' => 'Maputo', 'provincia' => 'MZ-MPM', 'pais' => 'MZ', 'termos_pagamento' => '30d', 'activo' => true], $admin);
+        $terceiros->criar(['nome' => 'Galp Moçambique', 'e_fornecedor' => true, 'tipo_entidade' => 'empresa', 'nuit' => '400033221', 'cidade' => 'Maputo', 'provincia' => 'MZ-MPM', 'pais' => 'MZ', 'termos_pagamento' => '30d', 'activo' => true], $admin);
         $texteis = $terceiros->criar(['nome' => 'Têxteis da Beira', 'e_fornecedor' => true, 'tipo_entidade' => 'empresa', 'nuit' => '400765123', 'cidade' => 'Beira', 'provincia' => 'MZ-S', 'pais' => 'MZ', 'termos_pagamento' => '45d', 'activo' => true], $admin);
         $terceiros->criar(['nome' => 'Casamentos Ndzava', 'e_potencial' => true, 'tipo_entidade' => 'empresa', 'nuit' => '401556677', 'cidade' => 'Maputo', 'provincia' => 'MZ-MPM', 'pais' => 'MZ', 'termos_pagamento' => 'pronto', 'activo' => true], $admin);
 
@@ -105,14 +107,29 @@ class DemoSeeder extends Seeder
             ]);
             $stock->inicial($catalogo[$ref], $qtd, $admin);
         }
+        // Material de que são feitos (Napa, Tecido, Lã)
+        $material = fn (string $nome) => Material::where('nome', $nome)->value('id');
+        foreach (['SOFA-RET' => 'Napa', 'SOFA-L' => 'Tecido', 'PUFF-01' => 'Napa', 'ALM-01' => 'Lã'] as $ref => $nome) {
+            $catalogo[$ref]->update(['material_id' => $material($nome)]);
+        }
+        // Matérias-primas: o que a LemServ compra para fabricar o seu material (só aparecem nas compras)
         foreach ([
+            ['NAPA-BR', 'Napa branca', 'm', '450.00'],
+            ['TEC-LIN', 'Tecido de linho', 'm', '380.00'],
+            ['ESP-D28', 'Espuma D28 (placa 2 m)', 'un', '1200.00'],
+        ] as [$ref, $nome, $un, $compra]) {
+            $catalogo[$ref] = Produto::create([
+                'referencia' => $ref, 'tipo' => Produto::MATERIA, 'nome' => $nome, 'preco' => '0', 'preco_compra' => $compra, 'taxa_iva' => '16.00',
+                'unidade' => $un, 'em_venda' => false, 'em_compra' => true, 'em_aluguer' => false, 'na_loja' => false,
+            ]);
+        }        foreach ([
             ['TRANSP', 'Transporte (ida e volta)', '500.00', 'srv', 'Entrega e recolha do material em Maputo e Matola.'],
             ['MONT', 'Montagem e desmontagem', '2000.00', 'srv', 'A nossa equipa monta tudo antes do evento e recolhe no fim.'],
             ['DECOR', 'Decoração de espaço (por hora)', '850.00', 'h', 'Decoração completa segundo o tema de cores escolhido.'],
         ] as [$ref, $nome, $preco, $un, $texto]) {
             $catalogo[$ref] = Produto::create([
                 'referencia' => $ref, 'tipo' => 'servico', 'nome' => $nome, 'categoria_id' => $categoria('Serviços'), 'preco' => $preco, 'taxa_iva' => '16.00',
-                'unidade' => $un, 'em_venda' => true, 'em_compra' => false, 'na_loja' => true, 'loja_descricao' => $texto,
+                'unidade' => $un, 'em_venda' => true, 'em_compra' => false, 'na_loja' => $ref !== 'TRANSP', 'loja_descricao' => $texto,
             ]);
         }
 
@@ -138,16 +155,16 @@ class DemoSeeder extends Seeder
         $d = fn (int $dias) => $hoje->addDays($dias)->toDateString();
 
         $casamento = $nova($clientes[1], ['data_evento' => $d(10), 'data_fim_evento' => $d(11), 'data_entrega' => $d(9), 'data_recolha' => $d(12), 'dias' => 2],
-            ['local' => 'Hotel Costa do Sol, Av. da Marginal 1240, Maputo', 'contacto_local' => 'Paulo Chissano, +258 82 310 9988', 'transporte' => true, 'tema' => 'Branco e dourado'],
-            [['CAD-TIFF', 80], ['MESA-RED', 8], ['TOALHA-BR', 8], ['TRANSP', 1], ['MONT', 1]]);
+            ['local' => 'Hotel Costa do Sol, Av. da Marginal 1240, Maputo', 'contacto_local' => 'Paulo Chissano, +258 82 310 9988', 'transporte' => true, 'taxa_transporte' => '3500', 'tema' => 'Branco e dourado'],
+            [['CAD-TIFF', 80], ['MESA-RED', 8], ['TOALHA-BR', 8], ['MONT', 1]]);
         $reservas->confirmar($casamento, $admin);
 
         $nova($clientes[5], ['data_evento' => $d(20), 'data_fim_evento' => $d(20), 'data_entrega' => $d(20), 'data_recolha' => $d(21), 'dias' => 1],
             ['local' => 'Bairro Triunfo, casa 87, Maputo', 'transporte' => true, 'tema' => 'Rosa e branco', 'nota_publica' => 'Aniversário de 30 anos, montagem até às 15h.'],
-            [['SOFA-L', 1], ['PUFF-01', 6], ['ALM-01', 20], ['TRANSP', 1]]);
+            [['SOFA-L', 1], ['PUFF-01', 6], ['ALM-01', 20]]);
 
         $feira = $nova($clientes[2], ['data_evento' => $d(-1), 'data_fim_evento' => $d(-1), 'data_entrega' => $d(-2), 'data_recolha' => $d(1), 'dias' => 1],
-            ['local' => 'Praça da Juventude, Matola', 'transporte' => true, 'tema' => 'Verde e natural'],
+            ['local' => 'Praça da Juventude, Matola', 'transporte' => true, 'taxa_transporte' => '3000', 'tema' => 'Verde e natural'],
             [['TENDA-6X6', 1], ['CAD-TIFF', 40], ['MONT', 1]]);
         $reservas->entregar($reservas->confirmar($feira, $admin), $admin, $d(-2));
 
@@ -226,7 +243,7 @@ class DemoSeeder extends Seeder
 
         $ef = $compras->criar(['terceiro_id' => $texteis->id, 'data' => $dia(25), 'data_entrega' => $dia(15), 'ref_fornecedor' => 'COT-118'], $admin);
         $compras->adicionarLinha($ef, ['descricao' => 'Capas de almofada em linho 40x40', 'quantidade' => '60', 'preco_unitario' => '180', 'taxa_iva' => '16.00']);
-        $compras->adicionarLinha($ef, ['descricao' => 'Tecido branco para sofá (metro)', 'quantidade' => '25', 'preco_unitario' => '450', 'taxa_iva' => '16.00']);
+        $compras->adicionarLinha($ef, ['produto_id' => $catalogo['NAPA-BR']->id, 'quantidade' => '25']);
         $ef = $compras->validar($ef->fresh(), $admin);
         $compras->encomendar($ef, $dia(24), 'whatsapp');
         $compras->receber($ef->fresh());
@@ -237,9 +254,19 @@ class DemoSeeder extends Seeder
         $compras->adicionarLinha($ef, ['descricao' => 'Toalhas de mesa brancas 3x3 m', 'quantidade' => '30', 'preco_unitario' => '350', 'taxa_iva' => '16.00']);
         $compras->encomendar($compras->validar($ef->fresh(), $admin), $dia(6), 'email');
 
-        $ff = $facturasFornecedor->criar(['terceiro_id' => $galp->id, 'ref_fornecedor' => 'FG-889120', 'data' => $dia(12), 'termos_pagamento' => '30d'], $admin);
-        $facturasFornecedor->adicionarLinha($ff, ['descricao' => 'Gasóleo para a viatura de entregas (litros)', 'quantidade' => '120', 'preco_unitario' => '76.50', 'taxa_iva' => '16.00']);
-        $facturasFornecedor->validar($ff->fresh(), $admin);
+        // Despesas do dia-a-dia (com as compras, são os gastos dos Resultados)
+        foreach ([
+            [12, 'combustivel', 'Gasóleo da carrinha de entregas (Galp, 120 l)', '9180', 'mpesa'],
+            [40, 'combustivel', 'Gasóleo da carrinha de entregas', '6500', 'numerario'],
+            [30, 'salarios', 'Ajudas de custo da equipa de montagem', '12000', 'transferencia'],
+            [28, 'renda', 'Renda do armazém da Matola', '15000', 'transferencia'],
+            [20, 'energia', 'Electricidade do armazém (EDM)', '2300', 'mpesa'],
+            [8, 'manutencao', 'Reparação de 4 cadeiras Tiffany', '1800', 'numerario'],
+        ] as [$diasAtras, $categoria, $descricao, $valor, $metodo]) {
+            $despesa = new Despesa(['data' => $dia($diasAtras), 'categoria' => $categoria, 'descricao' => $descricao, 'valor' => $valor, 'metodo' => $metodo]);
+            $despesa->criado_por = $admin->id;
+            $despesa->save();
+        }
 
         // Contactos das empresas clientes
         foreach ([
