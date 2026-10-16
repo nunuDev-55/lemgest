@@ -188,7 +188,7 @@ final class Permissoes
             'compras.ver', 'compras.criar', 'compras.validar', 'compras.receber', 'compras.pagar', 'despesas.ver', 'despesas.registar',
             'stock.ver', 'stock.movimentar', 'stock.inventariar',
             'reservas.ver', 'reservas.criar', 'reservas.confirmar', 'reservas.entregar',
-            'resultados.ver', 'loja.ver', 'loja.gerir',
+            'resultados.ver', 'loja.gerir',
         ],
         'Comercial' => [
             'reservas.ver', 'reservas.criar', 'reservas.confirmar', 'terceiros.contas',

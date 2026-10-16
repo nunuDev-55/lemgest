@@ -48,48 +48,60 @@ class SiteECatalogoTest extends TestCase
         ]);
     }
 
-    public function test_visitante_ve_o_site_e_o_catalogo_sem_precos(): void
+    public function test_visitante_ve_o_site_mas_o_catalogo_pede_conta(): void
     {
         $this->get('/')->assertOk()->assertInertia(fn (Assert $p) => $p
             ->component('site/inicio')
             ->where('destaques.0.nome', 'Sofá chesterfield')
             ->where('destaques.0.preco_dia', null)
+            ->where('destaques.0', fn ($c) => ! collect($c)->has('preco_compra') && ! collect($c)->has('quantidade_total'))
             ->where('cliente', null));
 
-        $this->get('/catalogo')->assertInertia(fn (Assert $p) => $p
-            ->component('site/catalogo')
-            ->has('produtos', 1)
-            ->where('produtos.0.preco_dia', null)
-            ->where('produtos.0', fn ($c) => ! collect($c)->has('preco_compra') && ! collect($c)->has('quantidade_total')));
-
-        $this->get("/catalogo/{$this->sofa->id}")->assertOk();
-        $this->get("/catalogo/{$this->escondido->id}")->assertNotFound();
-        // Sem conta não se reserva
+        $this->get('/catalogo')->assertRedirect('/conta/entrar')->assertSessionHas('status');
         $this->get('/catalogo/reserva')->assertRedirect('/conta/entrar');
+
+        // Depois de entrar, volta à peça que queria ver
+        $this->get("/catalogo/{$this->sofa->id}")->assertRedirect('/conta/entrar');
+        $this->conta();
+        $this->post('/conta/entrar', ['email' => 'nadia@exemplo.co.mz', 'password' => 'senha-segura-1'])->assertRedirect("/catalogo/{$this->sofa->id}");
+        $this->get("/catalogo/{$this->sofa->id}")->assertOk()->assertInertia(fn (Assert $p) => $p->where('produto.preco_dia', '1740.00'));
+        $this->get("/catalogo/{$this->escondido->id}")->assertNotFound();
     }
 
     public function test_paginas_publicas_nao_levam_as_rotas_internas_e_tem_cabecalhos_de_seguranca(): void
     {
-        $resposta = $this->get('/catalogo');
+        $resposta = $this->get('/');
         $resposta->assertHeader('X-Frame-Options', 'SAMEORIGIN')->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->assertStringContainsString("frame-ancestors 'none'", (string) $resposta->headers->get('Content-Security-Policy'));
         $this->assertStringNotContainsString('administracao', $resposta->getContent());
         $this->assertStringNotContainsString('Ziggy', $resposta->getContent());
     }
 
-    public function test_cliente_ve_precos_e_disponibilidade(): void
+    public function test_cliente_ve_precos_destaques_ordena_e_ve_a_disponibilidade_na_reserva(): void
     {
+        Produto::factory()->create(['nome' => 'Puff redondo', 'em_aluguer' => true, 'preco_aluguer' => '100.00', 'na_loja' => true, 'loja_destaque' => false]);
         $this->actingAs($this->conta(), 'cliente');
-        $dia = today()->addDays(10)->toDateString();
 
-        $this->get("/catalogo?de={$dia}&ate={$dia}")->assertInertia(fn (Assert $p) => $p
+        $this->get('/catalogo')->assertInertia(fn (Assert $p) => $p
+            ->component('site/catalogo')
+            ->has('produtos', 2)
+            ->where('produtos.0.nome', 'Sofá chesterfield') // em destaque primeiro
             ->where('produtos.0.preco_dia', '1740.00')
-            ->where('produtos.0.disponivel', 10)
+            ->has('destaques', 1)
+            ->has('ordens', 5)
             ->where('podeReservar', true));
+        $this->get('/catalogo?ordem=preco')->assertInertia(fn (Assert $p) => $p->where('produtos.0.nome', 'Puff redondo'));
+        $this->get('/catalogo?ordem=preco_desc')->assertInertia(fn (Assert $p) => $p->where('produtos.0.nome', 'Sofá chesterfield'));
+        $this->get('/catalogo?pesquisa=puff')->assertInertia(fn (Assert $p) => $p->has('produtos', 1));
 
-        // Sem "Ver o catálogo" no perfil Cliente, volta a ser como um visitante
+        // As datas escolhem-se em "A minha reserva": aí aparece quantas peças estão livres
+        $dia = today()->addDays(10)->toDateString();
+        $this->post('/catalogo/reserva/linhas', ['produto_id' => $this->sofa->id, 'quantidade' => 3])->assertSessionHasNoErrors();
+        $this->get("/catalogo/reserva?de={$dia}&ate={$dia}")->assertInertia(fn (Assert $p) => $p->where('linhas.0.disponivel', 10));
+
+        // Sem "Ver o catálogo" no perfil Cliente, o catálogo não abre
         Role::findByName(Permissoes::CLIENTE, 'cliente')->revokePermissionTo('loja.catalogo');
-        $this->get('/catalogo')->assertInertia(fn (Assert $p) => $p->where('produtos.0.preco_dia', null));
+        $this->get('/catalogo')->assertRedirect('/conta')->assertSessionHas('erro');
     }
 
     public function test_reserva_pelo_catalogo_cria_um_pedido(): void
@@ -126,7 +138,7 @@ class SiteECatalogoTest extends TestCase
         $this->get('/administracao/auditoria')->assertOk();
     }
 
-    public function test_equipa_ve_a_loja_com_precos_a_partir_do_lemgest(): void
+    public function test_da_equipa_so_o_administrador_ve_a_loja(): void
     {
         // Administrador: acesso automático
         $this->actingAs($this->admin, 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p
@@ -137,10 +149,12 @@ class SiteECatalogoTest extends TestCase
         // A equipa não faz pedidos: os pedidos são das contas de clientes
         $this->post('/catalogo/reserva/linhas', ['produto_id' => $this->sofa->id, 'quantidade' => 1])->assertRedirect('/conta/entrar');
 
-        // Gestor tem "Ver a loja"; Comercial não (vê como um visitante)
-        $this->actingAs($this->utilizadorComPerfil('Gestor'), 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p->where('produtos.0.preco_dia', '1740.00'));
-        $this->actingAs($this->utilizadorComPerfil('Comercial'), 'web')->get('/catalogo')->assertInertia(fn (Assert $p) => $p
-            ->where('produtos.0.preco_dia', null)->where('equipa', null));
+        // Os outros perfis não entram, até o Administrador lhes dar "Ver a loja" em Perfis e permissões
+        $gestor = $this->utilizadorComPerfil('Gestor');
+        $this->actingAs($gestor, 'web')->get('/catalogo')->assertRedirect('/conta/entrar');
+        $this->actingAs($this->utilizadorComPerfil('Comercial'), 'web')->get('/catalogo')->assertRedirect('/conta/entrar');
+        Role::findByName('Gestor', 'web')->givePermissionTo('loja.ver');
+        $this->actingAs($gestor->fresh(), 'web')->get('/catalogo')->assertOk();
     }
 
     public function test_cliente_nunca_entra_no_sistema_interno(): void
@@ -154,11 +168,13 @@ class SiteECatalogoTest extends TestCase
     {
         config(['lemgest.publicacao.redes_sistema' => ['192.168.1.0/24']]);
         $this->get('/login', ['REMOTE_ADDR' => '41.220.10.5'])->assertNotFound();
-        $this->get('/catalogo')->assertOk();
+        $this->get('/')->assertOk();
+        $this->get('/catalogo')->assertRedirect('/conta/entrar');
         $this->withServerVariables(['REMOTE_ADDR' => '192.168.1.20'])->get('/login')->assertOk();
 
         config(['lemgest.publicacao.redes_sistema' => [], 'lemgest.publicacao.dominio_publico' => 'lemserv.test']);
         $this->get('http://lemserv.test/login')->assertNotFound();
-        $this->get('http://lemserv.test/catalogo')->assertOk();
+        $this->get('http://lemserv.test/')->assertOk();
+        $this->get('http://lemserv.test/conta/entrar')->assertOk();
     }
 }

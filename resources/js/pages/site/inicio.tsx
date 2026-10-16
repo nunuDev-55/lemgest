@@ -1,4 +1,4 @@
-import { CartaoProduto, Etiqueta, Foto, TituloSeccao, useFotosSite, type ProdutoLoja } from '@/components/site';
+import { CarrosselProdutos, Etiqueta, Foto, TituloSeccao, useFotosSite, type ProdutoLoja } from '@/components/site';
 import { VisorFotos } from '@/components/visor-fotos';
 import SiteLayout, { linkWhatsApp, useSite } from '@/layouts/site-layout';
 import { formatNumero, formatValor } from '@/lib/format';
@@ -66,6 +66,10 @@ const botaoDourado =
 const botaoContorno =
     'maiusculas-pequenas inline-flex items-center gap-2 rounded-[3px] border border-[#efe6da]/35 px-6 py-3.5 font-medium text-[#efe6da] transition-colors hover:bg-white/10';
 const doisDigitos = (n: number) => String(n).padStart(2, '0');
+/** No telemóvel os cartões deslizam para o lado; a partir do tablet ficam em grelha */
+const filaMovel =
+    '-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:grid md:scroll-px-0 md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden';
+const cartaoMovel = 'w-[62%] shrink-0 snap-start sm:w-[42%] md:w-auto';
 /** Colunas da grelha conforme o número de cartões (2, 3 ou 4), sem deixar espaços vazios */
 const colunas = (n: number) => (n >= 4 ? 'md:grid-cols-4' : n === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2');
 
@@ -76,6 +80,7 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
     const [capa, setCapa] = useState(0);
     const [destaque, setDestaque] = useState(0);
     const [visor, setVisor] = useState<number | null>(null);
+    const [todasAsFotos, setTodasAsFotos] = useState(false);
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de um orçamento para um evento.');
     const pecas = destaques.filter((d) => d.foto).slice(0, 4);
     const peca = pecas[destaque] ?? null;
@@ -139,9 +144,8 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
 
                     <div className="relative mx-auto w-full max-w-7xl px-4 py-20 md:px-8">
                         <p className="maiusculas-pequenas text-[var(--dourado)]">LemServ · Lounge e Outdoor</p>
-                        <h1 className="titulo-maiusculo mt-6 max-w-3xl text-[46px] md:text-[80px]">
-                            Mobiliário que
-                            <br />
+                        <h1 className="titulo-maiusculo mt-6 max-w-3xl text-[40px] sm:text-[56px] md:text-[80px]">
+                            Mobiliário que <br className="hidden sm:block" />
                             faz o seu evento.
                         </h1>
                         <p className="mt-6 max-w-md text-[16px] leading-relaxed text-[#efe6da]/75">
@@ -163,10 +167,29 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                             Descer
                             <ArrowDown className="size-3.5" />
                         </a>
+                        {/* No telemóvel o contador fica por baixo dos botões, longe do botão do WhatsApp */}
+                        {capas.length > 1 && (
+                            <div className="mt-10 flex items-center gap-4 md:hidden">
+                                <span className="maiusculas-pequenas text-[#efe6da]/70 tabular-nums">
+                                    {doisDigitos(capa + 1)} / {doisDigitos(capas.length)}
+                                </span>
+                                <div className="flex gap-1.5">
+                                    {capas.map((f, i) => (
+                                        <button
+                                            key={f.id}
+                                            type="button"
+                                            onClick={() => setCapa(i)}
+                                            aria-label={`Mostrar a foto ${i + 1}`}
+                                            className={cn('h-[2px] transition-all', i === capa ? 'w-8 bg-[var(--dourado)]' : 'w-4 bg-white/40')}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {capas.length > 1 && (
-                        <div className="absolute right-4 bottom-8 flex items-center gap-4 md:right-8">
+                        <div className="absolute right-8 bottom-8 hidden items-center gap-4 md:flex">
                             <span className="maiusculas-pequenas text-[#efe6da]/70 tabular-nums">
                                 {doisDigitos(capa + 1)} / {doisDigitos(capas.length)}
                             </span>
@@ -221,12 +244,15 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                 <ArrowRight className="size-3.5" />
                             </Link>
                         </div>
-                        <div className={cn('grid grid-cols-2 gap-3', colunas(Math.min(4, categorias.length)))}>
+                        <div className={cn(filaMovel, colunas(Math.min(4, categorias.length)))}>
                             {categorias.slice(0, 4).map((c, i) => (
                                 <Link
                                     key={c.id}
                                     href={`/catalogo?categoria=${c.id}`}
-                                    className="group flex flex-col overflow-hidden rounded-[4px] bg-[var(--tinta-2)] ring-1 ring-white/10"
+                                    className={cn(
+                                        'group flex flex-col overflow-hidden rounded-[4px] bg-[var(--tinta-2)] ring-1 ring-white/10',
+                                        cartaoMovel,
+                                    )}
                                 >
                                     <div className="aspect-[4/5] overflow-hidden">
                                         <Foto
@@ -264,7 +290,7 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                         {doisDigitos(destaque + 1)} / {doisDigitos(pecas.length)}
                                     </span>
                                 </div>
-                                <h2 className="titulo-maiusculo mt-5 text-[36px] md:text-[46px]">{peca.nome}</h2>
+                                <h2 className="titulo-maiusculo mt-5 text-[30px] break-words sm:text-[36px] md:text-[46px]">{peca.nome}</h2>
                                 {peca.descricao && <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[#efe6da]/70">{peca.descricao}</p>}
                                 <dl className="mt-7 grid grid-cols-3 border-y border-white/10 py-4 text-[13px]">
                                     {[
@@ -325,7 +351,7 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                 Fabricamos em napa, tecido e bouclé, e limpamos e revemos cada peça antes do seu evento.
                             </p>
                         </div>
-                        <div className={cn('grid grid-cols-2 gap-3', colunas(Math.min(4, materiais.length)))}>
+                        <div className={cn(filaMovel, colunas(Math.min(4, materiais.length)))}>
                             {materiais.slice(0, 4).map((m) => {
                                 const imagem = textura(m.nome);
                                 const conteudo = (
@@ -356,12 +382,12 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                     <Link
                                         key={m.id}
                                         href={`/catalogo?material=${m.id}`}
-                                        className="group relative overflow-hidden rounded-[4px] ring-1 ring-white/10"
+                                        className={cn('group relative overflow-hidden rounded-[4px] ring-1 ring-white/10', cartaoMovel)}
                                     >
                                         {conteudo}
                                     </Link>
                                 ) : (
-                                    <div key={m.id} className="group relative overflow-hidden rounded-[4px] ring-1 ring-white/10">
+                                    <div key={m.id} className={cn('group relative overflow-hidden rounded-[4px] ring-1 ring-white/10', cartaoMovel)}>
                                         {conteudo}
                                     </div>
                                 );
@@ -375,23 +401,22 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
 
             {/* Mais pedidos */}
             {destaques.length > 0 && (
-                <section className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
-                    <TituloSeccao
+                <div className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
+                    <CarrosselProdutos
                         etiqueta="Em destaque"
                         titulo="Os mais pedidos para eventos"
+                        produtos={destaques}
                         accao={
-                            <Link href="/catalogo" className="maiusculas-pequenas inline-flex items-center gap-2 font-medium hover:underline">
+                            <Link
+                                href="/catalogo"
+                                className="maiusculas-pequenas hidden items-center gap-2 font-medium hover:underline sm:inline-flex"
+                            >
                                 Ver todo o catálogo
                                 <ArrowRight className="size-3.5" />
                             </Link>
                         }
                     />
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
-                        {destaques.slice(0, 4).map((p) => (
-                            <CartaoProduto key={p.id} p={p} />
-                        ))}
-                    </div>
-                </section>
+                </div>
             )}
 
             {/* Faixa colorida (estilo Livora), na cor da LemServ */}
@@ -429,7 +454,7 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                 <section id="eventos" className="mx-auto max-w-7xl scroll-mt-24 px-4 pt-24 md:px-8">
                     <TituloSeccao etiqueta="Eventos que montámos" titulo="Cada evento com a sua cara" />
                     <div className="columns-2 gap-3 md:columns-4 [&>*]:mb-3">
-                        {galeria.map((f, i) => (
+                        {(todasAsFotos ? galeria : galeria.slice(0, 12)).map((f, i) => (
                             <button
                                 key={f.id}
                                 type="button"
@@ -450,6 +475,17 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                             </button>
                         ))}
                     </div>
+                    {!todasAsFotos && galeria.length > 12 && (
+                        <div className="mt-6 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setTodasAsFotos(true)}
+                                className="maiusculas-pequenas rounded-[3px] border border-[var(--tinta)]/25 px-6 py-3.5 font-medium hover:bg-white"
+                            >
+                                Ver mais fotos ({galeria.length - 12})
+                            </button>
+                        </div>
+                    )}
                     <VisorFotos fotos={galeria.map((f) => ({ src: f.grande, alt: f.legenda }))} indice={visor} onMudar={setVisor} />
                 </section>
             )}

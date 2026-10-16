@@ -3,6 +3,7 @@
 use App\Http\Controllers\Loja\CatalogoController;
 use App\Http\Controllers\Loja\PedidoController;
 use App\Http\Controllers\Loja\SiteController;
+use App\Http\Middleware\AcessoCatalogo;
 use App\Http\Middleware\GarantirContaActiva;
 use App\Http\Middleware\PermissaoCliente;
 use Illuminate\Support\Facades\Route;
@@ -15,8 +16,12 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:loja')->group(function () {
     Route::get('/', [SiteController::class, 'inicio'])->name('site.inicio');
 
-    Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
-    Route::get('catalogo/{produto}', [CatalogoController::class, 'mostrar'])->whereNumber('produto')->name('catalogo.mostrar');
+    // O catálogo só abre com conta (clientes com "Ver o catálogo"; da equipa, só quem tem "Ver a loja")
+    Route::middleware(AcessoCatalogo::class)->group(function () {
+        Route::get('catalogo', [CatalogoController::class, 'index'])->name('catalogo.index');
+        Route::get('catalogo/{produto}', [CatalogoController::class, 'mostrar'])->whereNumber('produto')->name('catalogo.mostrar');
+    });
+    // Fotos: públicas, porque a página inicial mostra as peças (sem preço)
     Route::get('catalogo/fotos/{foto}/{tamanho}', [CatalogoController::class, 'foto'])->whereNumber('foto')->name('catalogo.foto');
     Route::get('catalogo/galeria/{foto}/{tamanho}', [CatalogoController::class, 'fotoSite'])->whereNumber('foto')->name('catalogo.galeria');
 

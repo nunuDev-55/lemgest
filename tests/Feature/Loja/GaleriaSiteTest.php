@@ -52,17 +52,17 @@ class GaleriaSiteTest extends TestCase
 
     public function test_legenda_capa_esconder_ordenar_e_apagar(): void
     {
-        [$a, $b, $c, $d] = $this->carregar(4);
+        [$a, $b, $c, $d, $e, $f, $g] = $this->carregar(7);
 
         $this->put("/administracao/site/fotos/{$a->id}", ['legenda' => 'Casamento no jardim'])->assertSessionHasNoErrors();
         $this->put("/administracao/site/fotos/{$a->id}", ['legenda' => ''])->assertSessionHasErrors('legenda');
         $this->assertSame('Casamento no jardim', $a->fresh()->legenda);
 
-        // No máximo três na capa
-        foreach ([$a, $b, $c] as $f) {
-            $this->put("/administracao/site/fotos/{$f->id}", ['capa' => true])->assertSessionHasNoErrors();
+        // No máximo seis na capa
+        foreach ([$a, $b, $c, $d, $e, $f] as $foto) {
+            $this->put("/administracao/site/fotos/{$foto->id}", ['capa' => true])->assertSessionHasNoErrors();
         }
-        $this->put("/administracao/site/fotos/{$d->id}", ['capa' => true])->assertSessionHasErrors('capa');
+        $this->put("/administracao/site/fotos/{$g->id}", ['capa' => true])->assertSessionHasErrors('capa');
 
         // Esconder tira da capa e do site (a equipa continua a ver a foto; os visitantes não)
         $this->put("/administracao/site/fotos/{$c->id}", ['visivel' => false])->assertSessionHasNoErrors();
@@ -70,11 +70,11 @@ class GaleriaSiteTest extends TestCase
         $this->get("/catalogo/galeria/{$c->id}/media")->assertOk();
         Auth::guard('web')->logout();
         $this->get("/catalogo/galeria/{$c->id}/media")->assertNotFound();
-        $this->get('/')->assertInertia(fn (Assert $p) => $p->has('fotosSite', 3)->where('fotosSite.0.capa', true));
+        $this->get('/')->assertInertia(fn (Assert $p) => $p->has('fotosSite', 6)->where('fotosSite.0.capa', true));
 
         // Ordenar e apagar (os ficheiros também saem)
         $this->actingAs($this->admin, 'web')->put("/administracao/site/fotos/{$b->id}/mover", ['direcao' => 'anterior']);
-        $this->assertSame([$b->id, $a->id, $c->id, $d->id], FotoSite::query()->ordenadas()->pluck('id')->all());
+        $this->assertSame([$b->id, $a->id, $c->id, $d->id, $e->id, $f->id, $g->id], FotoSite::query()->ordenadas()->pluck('id')->all());
         $this->delete("/administracao/site/fotos/{$d->id}")->assertSessionHasNoErrors();
         Storage::disk('local')->assertMissing($d->caminho('media'));
         $this->assertDatabaseMissing('fotos_site', ['id' => $d->id]);

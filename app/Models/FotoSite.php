@@ -20,7 +20,7 @@ class FotoSite extends Model
     public const MAXIMO = 60;
 
     /** Quantas fotos vão alternando na capa da página inicial */
-    public const MAXIMO_CAPA = 3;
+    public const MAXIMO_CAPA = 6;
 
     protected $table = 'fotos_site';
 

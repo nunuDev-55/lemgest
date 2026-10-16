@@ -22,7 +22,7 @@ class SiteController extends Controller
 
         return Inertia::render('site/inicio', [
             'destaques' => $base()->where('loja_destaque', true)
-                ->orderByRaw('loja_ordem = 0')->orderBy('loja_ordem')->orderBy('nome')->limit(8)->get()
+                ->orderByRaw('loja_ordem = 0')->orderBy('loja_ordem')->orderBy('nome')->limit(12)->get()
                 ->map(fn (Produto $p) => $this->cartao($p, $comPreco))->values(),
             // Categorias com material na loja, cada uma com uma foto para a entrada
             'categorias' => Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome', 'descricao'])

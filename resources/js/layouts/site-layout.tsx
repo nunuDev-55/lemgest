@@ -58,19 +58,24 @@ const LIGACOES = [
     { label: 'Contactos', href: '#contactos' },
 ];
 
-/** Logótipo: a borboleta da LemServ e o nome em maiúsculas finas */
+/** Logótipo: a borboleta da LemServ e o nome em maiúsculas finas (um pouco mais pequeno no telemóvel, para caberem os ícones) */
 export function Marca({ claro = false }: { claro?: boolean }) {
     const { loja } = useSite();
     return (
-        <Link href="/" className="flex items-center gap-2.5" aria-label={`${loja?.nome_comercial ?? 'LemServ'}, página inicial`}>
-            <img src="/img/lemservices-marca.png" alt="" className="size-9 object-contain" />
+        <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5" aria-label={`${loja?.nome_comercial ?? 'LemServ'}, página inicial`}>
+            <img src="/img/lemservices-marca.png" alt="" className="size-8 object-contain sm:size-9" />
             <span className="flex flex-col leading-none">
-                <span className={cn('font-titulo text-[22px] tracking-[0.14em] uppercase', claro ? 'text-[var(--tinta)]' : 'text-[#efe6da]')}>
+                <span
+                    className={cn(
+                        'font-titulo text-[19px] tracking-[0.12em] uppercase sm:text-[22px] sm:tracking-[0.14em]',
+                        claro ? 'text-[var(--tinta)]' : 'text-[#efe6da]',
+                    )}
+                >
                     {loja?.nome_comercial ?? 'LemServ'}
                 </span>
                 <span
                     className={cn(
-                        'mt-1 text-[9.5px] tracking-[0.32em] whitespace-nowrap uppercase',
+                        'mt-1 text-[8.5px] tracking-[0.2em] whitespace-nowrap uppercase sm:text-[9.5px] sm:tracking-[0.32em]',
                         claro ? 'text-[var(--muted-foreground)]' : 'text-[#a8998b]',
                     )}
                 >
@@ -98,7 +103,8 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
             <Head title={titulo} />
             {equipa && !cliente && (
                 <div className="bg-[var(--dourado)] px-4 py-1.5 text-center text-[12.5px] text-[var(--tinta)]">
-                    Está a ver a loja como equipa ({equipa.nome}): vê os preços e a disponibilidade como um cliente.{' '}
+                    <span className="sm:hidden">A ver a loja como equipa.</span>
+                    <span className="hidden sm:inline">Está a ver a loja como equipa ({equipa.nome}): vê os preços como um cliente.</span>{' '}
                     <a href="/painel" className="font-medium underline underline-offset-2">
                         Voltar ao LemGest
                     </a>
@@ -106,7 +112,7 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
             )}
 
             <header className="escuro sticky top-0 z-30 border-b border-white/10">
-                <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
+                <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 md:px-8">
                     <Marca />
 
                     <nav className="hidden items-center gap-6 xl:flex" aria-label="Site">
@@ -125,14 +131,19 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                     </nav>
 
                     <div className="flex items-center gap-0.5">
-                        <Link href="/catalogo" className={icone} aria-label="Procurar no catálogo">
+                        {/* Nos telemóveis mais estreitos sai a lupa: o catálogo está no menu e tem a sua própria pesquisa */}
+                        <Link href="/catalogo" className={cn(icone, 'max-[359px]:hidden')} aria-label="Procurar no catálogo">
                             <Search className="size-[18px]" strokeWidth={1.6} />
                         </Link>
                         <Link href={cliente ? '/conta' : '/conta/entrar'} className={icone} aria-label={cliente ? 'A minha conta' : 'Entrar'}>
                             <UserRound className="size-[18px]" strokeWidth={1.6} />
                         </Link>
                         {cliente && pode('loja.reservar') && (
-                            <Link href="/catalogo/reserva" className={cn(icone, 'relative')} aria-label={`A minha reserva, ${carrinho} peças`}>
+                            <Link
+                                href="/catalogo/reserva"
+                                className={cn(icone, 'relative')}
+                                aria-label={`A minha reserva, ${carrinho} ${carrinho === 1 ? 'peça' : 'peças'}`}
+                            >
                                 <ShoppingBag className="size-[18px]" strokeWidth={1.6} />
                                 {carrinho > 0 && (
                                     <span className="absolute top-0.5 right-0.5 min-w-[18px] rounded-full bg-[var(--dourado)] px-1 text-center text-[10.5px] leading-[18px] font-semibold text-[var(--tinta)] tabular-nums">

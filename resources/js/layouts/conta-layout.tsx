@@ -25,44 +25,41 @@ export function ContaEntradaLayout({
     const { loja } = usePage<DadosConta>().props;
     const nome = loja?.nome_comercial ?? 'LemServ';
     const telefone = loja?.telemovel ?? loja?.telefone;
-    // Foto ao lado dos formulários: a primeira da capa do site
-    const foto = useFotosSite().capa[0] ?? null;
+    // Foto de fundo: uma das fotos da capa do site (Administração → Site e galeria)
+    const capas = useFotosSite().capa;
+    const foto = capas[1] ?? capas[0] ?? null;
 
     return (
-        <div className="site bg-background text-foreground grid min-h-screen lg:grid-cols-[1fr_1.05fr]">
+        <div className="site relative flex min-h-screen flex-col overflow-hidden bg-[var(--tinta)]">
             <Head title={`${titulo} · LemServ`} />
-            <div className="flex flex-col px-5 py-6 sm:px-10 lg:px-16">
-                <div className="flex items-center justify-between">
-                    <Marca claro />
-                    <Link href="/" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[13px]">
-                        <ChevronLeft className="size-3.5" />
-                        Voltar ao site
-                    </Link>
-                </div>
+            {/* A foto ocupa o ecrã todo; o formulário fica num cartão por cima */}
+            {foto && <img src={foto.grande} alt="" className="absolute inset-0 size-full object-cover" />}
+            <div className="absolute inset-0 bg-gradient-to-b from-[var(--tinta)]/75 via-[var(--tinta)]/45 to-[var(--tinta)]/85" />
 
-                <div className={cn('mx-auto flex w-full flex-1 flex-col justify-center py-10', largo ? 'max-w-[560px]' : 'max-w-[400px]')}>
-                    <h1 className="font-titulo text-[40px] leading-[1.05] font-medium tracking-[-0.01em]">{titulo}</h1>
-                    {descricao && <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">{descricao}</p>}
-                    <div className="mt-8">{children}</div>
-                </div>
-
-                <p className="text-muted-foreground text-[12.5px]">
-                    {[nome, 'Matola, Moçambique', telefone, loja?.email].filter(Boolean).join(' · ')}
-                </p>
+            <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8">
+                <Marca />
+                <Link href="/" className="maiusculas-pequenas inline-flex items-center gap-1.5 text-[#efe6da]/80 hover:text-white">
+                    <ChevronLeft className="size-3.5" />
+                    Voltar ao site
+                </Link>
             </div>
 
-            <div className="relative hidden p-4 lg:block">
-                <div className="relative h-full overflow-hidden rounded-[6px]">
-                    {foto && <img src={foto.grande} alt={foto.legenda} className="absolute inset-0 size-full object-cover" />}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                    <div className="absolute inset-x-10 bottom-10 text-white">
-                        <p className="titulo-maiusculo text-[40px]">Do primeiro sofá à última almofada.</p>
-                        <p className="mt-3 max-w-md text-[15px] text-white/80">
-                            Veja os preços, a disponibilidade nas suas datas e peça a reserva online. Nós tratamos do resto.
-                        </p>
-                    </div>
+            <div className="relative flex flex-1 items-center justify-center px-4 py-8">
+                <div
+                    className={cn(
+                        'bg-background text-foreground w-full rounded-[6px] p-5 shadow-2xl shadow-black/40 sm:p-9',
+                        largo ? 'max-w-[600px]' : 'max-w-[440px]',
+                    )}
+                >
+                    <h1 className="font-titulo text-[36px] leading-[1.05] font-medium tracking-[-0.01em]">{titulo}</h1>
+                    {descricao && <p className="text-muted-foreground mt-2 text-[14.5px] leading-relaxed">{descricao}</p>}
+                    <div className="mt-7">{children}</div>
                 </div>
             </div>
+
+            <p className="relative px-5 pb-6 text-center text-[12.5px] text-[#efe6da]/60">
+                {[nome, 'Matola, Moçambique', telefone, loja?.email].filter(Boolean).join(' · ')}
+            </p>
             <Notificacoes />
         </div>
     );
@@ -105,13 +102,17 @@ export default function ContaLayout({ titulo, children }: { titulo: string; chil
                         Sair
                     </button>
                 </div>
-                <nav className="mt-4 flex gap-1 overflow-x-auto border-b" aria-label="Área do cliente">
+                {/* A linha de baixo é uma sombra interior: o separador activo tapa-a sem sair da barra (assim o Windows não mostra setas de deslocamento) */}
+                <nav
+                    className="mt-4 flex gap-1 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--border)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    aria-label="Área do cliente"
+                >
                     {MENU.filter((m) => pode(m.permissao)).map((m) => (
                         <Link
                             key={m.href}
                             href={m.href}
                             className={cn(
-                                '-mb-px border-b-2 px-3 pt-1 pb-3 text-[14px] whitespace-nowrap',
+                                'border-b-2 px-3 pt-1 pb-3 text-[14px] whitespace-nowrap',
                                 activo(m.href, m.exacto)
                                     ? 'border-[var(--tinta)] font-medium text-[var(--tinta)]'
                                     : 'text-muted-foreground hover:text-foreground border-transparent',

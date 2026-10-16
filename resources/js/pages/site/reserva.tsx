@@ -5,7 +5,7 @@ import { formatNumero, formatValor } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Link, router, useForm } from '@inertiajs/react';
 import { LoaderCircle, Trash2 } from 'lucide-react';
-import { type FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
 
 interface Linha extends ProdutoLoja {
     quantidade: number;
@@ -42,18 +42,33 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
     const material = linhas.reduce((t, l) => t + Number(l.preco_dia ?? 0) * l.quantidade * dias, 0);
     const erros = form.errors as Record<string, string | undefined>;
 
+    /** Guarda a nova quantidade (entre 1 e 9999) e devolve a que fica */
     function mudarQuantidade(l: Linha, valor: string) {
         const q = Math.max(1, Math.min(9999, Number(valor) || 1));
         if (q !== l.quantidade) router.put(`/catalogo/reserva/linhas/${l.id}`, { quantidade: q }, { preserveScroll: true, preserveState: true });
+        return q;
     }
 
-    function verDisponibilidade() {
-        router.get(
-            '/catalogo/reserva',
-            { de: form.data.data_evento || undefined, ate: form.data.data_fim_evento || undefined },
-            { preserveScroll: true, preserveState: true, replace: true },
+    // Ao escolher as datas, a disponibilidade de cada peça actualiza-se sozinha
+    const de = form.data.data_evento;
+    const ate = form.data.data_fim_evento;
+    useEffect(() => {
+        if (!de || (de === (datas.de ?? '') && ate === (datas.ate ?? ''))) return;
+        const t = setTimeout(
+            () =>
+                router.get(
+                    '/catalogo/reserva',
+                    { de, ate: ate && ate >= de ? ate : undefined },
+                    { only: ['linhas', 'datas'], preserveScroll: true, preserveState: true, replace: true },
+                ),
+            300,
         );
-    }
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [de, ate]);
+
+    // Peças pedidas a mais para as datas escolhidas
+    const aMais = linhas.filter((l) => l.disponivel !== null && l.disponivel !== undefined && l.quantidade > l.disponivel);
 
     function enviar(e: FormEvent) {
         e.preventDefault();
@@ -63,8 +78,8 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
     return (
         <SiteLayout titulo="A minha reserva · LemServ">
             <div className="mx-auto max-w-6xl px-4 py-10 md:px-8">
-                <h1 className="font-titulo text-[36px] tracking-[-0.015em]">A minha reserva</h1>
-                <p className="text-muted-foreground mt-1 text-[14px]">
+                <h1 className="titulo-maiusculo text-[34px] sm:text-[44px]">A minha reserva</h1>
+                <p className="text-muted-foreground mt-3 text-[14px]">
                     O pedido não prende o material: a LemServ confirma a disponibilidade e a taxa de transporte e contacta-o.
                 </p>
 
@@ -79,51 +94,11 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                         </Link>
                     </div>
                 ) : (
-                    <form onSubmit={enviar} className="mt-6 grid items-start gap-8 lg:grid-cols-[1.4fr_1fr]">
-                        <div className="grid gap-6">
-                            <section>
-                                <h2 className="mb-3 text-[15px] font-semibold">Material</h2>
-                                <ul className="bg-card divide-y rounded-2xl border">
-                                    {linhas.map((l) => (
-                                        <li key={l.id} className="flex items-center gap-3 p-3">
-                                            <Link href={`/catalogo/${l.id}`} className="size-16 shrink-0 overflow-hidden rounded-md">
-                                                <Foto src={l.foto} alt={l.nome} />
-                                            </Link>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-[14px] font-medium">{l.nome}</p>
-                                                <p className="text-muted-foreground text-[12.5px] tabular-nums">
-                                                    {formatNumero(l.preco_dia)} MT / dia
-                                                </p>
-                                                <Disponibilidade n={l.disponivel} />
-                                            </div>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                max={9999}
-                                                defaultValue={l.quantidade}
-                                                onBlur={(e) => mudarQuantidade(l, e.target.value)}
-                                                aria-label={`Quantidade de ${l.nome}`}
-                                                className={cn(campo, 'w-20 text-right')}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => router.delete(`/catalogo/reserva/linhas/${l.id}`, { preserveScroll: true })}
-                                                className="text-muted-foreground hover:text-destructive p-1.5"
-                                                aria-label={`Tirar ${l.nome}`}
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <InputError message={erros.linhas} className="mt-2" />
-                                <Link href="/catalogo" className="text-muted-foreground hover:text-foreground mt-2 inline-block text-[13px]">
-                                    + Juntar mais material
-                                </Link>
-                            </section>
-
+                    // Colunas que podem encolher: um nome de peça comprido corta-se (…) em vez de alargar a página no telemóvel
+                    <form onSubmit={enviar} className="mt-6 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                        <div className="grid grid-cols-1 gap-6">
                             <section className="grid gap-4">
-                                <h2 className="text-[15px] font-semibold">O evento</h2>
+                                <h2 className="font-titulo text-[24px] font-medium">Quando é o evento?</h2>
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <label className="grid gap-1 text-[13px]">
                                         Primeiro dia
@@ -147,15 +122,92 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                                         <InputError message={form.errors.data_fim_evento} />
                                     </label>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={verDisponibilidade}
-                                    disabled={!form.data.data_evento}
-                                    className="hover:bg-muted w-fit rounded-md border px-3 py-1.5 text-[13px] font-medium disabled:opacity-50"
-                                >
-                                    Ver disponibilidade nestas datas
-                                </button>
+                            </section>
 
+                            <section>
+                                <h2 className="font-titulo mb-3 text-[24px] font-medium">O material</h2>
+                                {!de && (
+                                    <p className="text-muted-foreground -mt-1 mb-3 text-[13px]">
+                                        Escolha as datas do evento para ver quantas peças estão livres.
+                                    </p>
+                                )}
+                                <ul className="bg-card divide-y rounded-2xl border">
+                                    {linhas.map((l) => (
+                                        // No telemóvel a quantidade fica por baixo do nome (que pode ocupar duas linhas); a partir de 640 px, tudo numa linha
+                                        <li
+                                            key={l.id}
+                                            className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 gap-y-2 p-3 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:items-center"
+                                        >
+                                            <Link
+                                                href={`/catalogo/${l.id}`}
+                                                aria-label={`Ver ${l.nome}`}
+                                                className="row-span-2 size-16 overflow-hidden rounded-md sm:row-span-1"
+                                            >
+                                                <Foto src={l.foto} alt={l.nome} />
+                                            </Link>
+                                            <div className="min-w-0">
+                                                <p className="line-clamp-2 text-[14px] leading-snug font-medium sm:line-clamp-1">{l.nome}</p>
+                                                <p className="text-muted-foreground text-[12.5px] tabular-nums">
+                                                    {formatNumero(l.preco_dia)} MT / dia
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    // Volta a mostrar a quantidade guardada sempre que ela muda (por exemplo, em "Pedir 20")
+                                                    key={l.quantidade}
+                                                    type="number"
+                                                    min={1}
+                                                    max={9999}
+                                                    defaultValue={l.quantidade}
+                                                    onBlur={(e) => {
+                                                        e.target.value = String(mudarQuantidade(l, e.target.value));
+                                                    }}
+                                                    aria-label={`Quantidade de ${l.nome}`}
+                                                    className={cn(campo, 'w-20 text-right')}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.delete(`/catalogo/reserva/linhas/${l.id}`, { preserveScroll: true })}
+                                                    className="text-muted-foreground hover:text-destructive p-1.5"
+                                                    aria-label={`Tirar ${l.nome}`}
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </button>
+                                            </div>
+                                            {/* O que está livre nas datas escolhidas: por baixo, alinhado com o nome */}
+                                            {l.disponivel !== null && l.disponivel !== undefined && (
+                                                <div className="col-start-2 sm:col-end-4">
+                                                    {l.quantidade > l.disponivel ? (
+                                                        <p className="text-[12.5px] text-red-700">
+                                                            {l.disponivel === 0
+                                                                ? 'Esgotado nessas datas.'
+                                                                : `Só ${l.disponivel} livres nessas datas.`}{' '}
+                                                            {l.disponivel > 0 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => mudarQuantidade(l, String(l.disponivel))}
+                                                                    className="font-medium underline"
+                                                                >
+                                                                    Pedir {l.disponivel}
+                                                                </button>
+                                                            )}
+                                                        </p>
+                                                    ) : (
+                                                        <Disponibilidade n={l.disponivel} />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <InputError message={erros.linhas} className="mt-2" />
+                                <Link href="/catalogo" className="text-muted-foreground hover:text-foreground mt-2 inline-block text-[13px]">
+                                    + Juntar mais material
+                                </Link>
+                            </section>
+
+                            <section className="grid gap-4">
+                                <h2 className="font-titulo text-[24px] font-medium">Onde e como</h2>
                                 <fieldset className="grid gap-2 text-[13.5px]">
                                     <legend className="mb-1 text-[13px]">Transporte</legend>
                                     <label className="flex items-start gap-2 rounded-md border p-3">
@@ -253,7 +305,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                             </p>
                             <button
                                 type="submit"
-                                disabled={form.processing}
+                                disabled={form.processing || aMais.length > 0}
                                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-[3px] bg-[var(--tinta)] px-4 py-3 font-medium text-white disabled:opacity-60"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
