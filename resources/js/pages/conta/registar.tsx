@@ -146,7 +146,7 @@ export default function Registar({ provincias }: { provincias: Opcao[] }) {
                 </Campo>
                 <Button
                     type="submit"
-                    className="mt-1 h-11 w-full rounded-full bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90 sm:col-span-2"
+                    className="mt-1 h-11 w-full rounded-[3px] bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90 sm:col-span-2"
                     disabled={processing}
                 >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}

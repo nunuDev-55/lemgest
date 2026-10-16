@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/geist';
-@import '@fontsource-variable/fraunces';
+@import '@fontsource/cormorant-garamond/400.css';
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/cormorant-garamond/400-italic.css';
 
 @plugin 'tailwindcss-animate';
 
@@ -11,7 +14,7 @@
 @theme {
     --font-sans: 'Geist Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     /* Títulos do site público (letra serifada, como nas revistas de interiores) */
-    --font-titulo: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+    --font-titulo: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --font-mono: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
 
     --radius-lg: var(--radius);
@@ -270,24 +273,55 @@
 }
 
 /*
- * Site público e catálogo: tons quentes (creme e areia), sempre claros, com a cor ameixa da LemServ.
- * Só dentro de .site, para não mexer no aspecto do sistema interno.
+ * Site público e catálogo (Novaire + Livora): partes escuras em castanho-chocolate e dourado,
+ * o resto em creme. Só dentro de .site, para não mexer no aspecto do sistema interno.
  */
 .site {
-    --background: #faf7f2;
-    --foreground: #241c1a;
-    --card: #ffffff;
-    --card-foreground: #241c1a;
-    --muted: #f1ebe3;
-    --muted-foreground: #74685f;
-    --accent: #efe7dc;
-    --accent-foreground: #241c1a;
-    --border: #e6ddd2;
-    --input: #ddd3c7;
-    --ring: #6e2a63;
-    --primary: #6e2a63;
-    --primary-foreground: #ffffff;
+    --background: #f6f1ea;
+    --foreground: #241b17;
+    --card: #fffdf9;
+    --card-foreground: #241b17;
+    --muted: #efe7dc;
+    --muted-foreground: #7a6c60;
+    --accent: #ece3d7;
+    --accent-foreground: #241b17;
+    --border: #e3d8ca;
+    --input: #d9cdbf;
+    --ring: #b08a52;
+    --primary: #241b17;
+    --primary-foreground: #f6f1ea;
     --areia: #e9dfd2;
-    --tinta: #241c1a;
+    --tinta: #1c1411;
+    --tinta-2: #261c17;
+    --dourado: #c9a46a;
+    --ameixa: #3d1a38;
     color-scheme: light;
+}
+
+/* Secções escuras do site (capa, colecções, destaque, materiais, rodapé) */
+.site .escuro {
+    --background: #1c1411;
+    --foreground: #efe6da;
+    --card: #261c17;
+    --muted: #2c221c;
+    --muted-foreground: #a8998b;
+    --border: rgb(255 255 255 / 0.1);
+    background: var(--background);
+    color: var(--foreground);
+}
+
+/* Títulos ao estilo Novaire: maiúsculas finas e espaçadas */
+.titulo-maiusculo {
+    font-family: var(--font-titulo);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    line-height: 1.02;
+}
+
+/* Etiquetas e botões em maiúsculas pequenas */
+.maiusculas-pequenas {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11.5px;
 }

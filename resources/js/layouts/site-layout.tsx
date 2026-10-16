@@ -50,67 +50,73 @@ export function useSite() {
 }
 
 const LIGACOES = [
-    { label: 'Início', href: '/' },
     { label: 'Catálogo', href: '/catalogo' },
     { label: 'Eventos', href: '/#eventos' },
+    { label: 'Materiais', href: '/#materiais' },
     { label: 'Como reservar', href: '/#como-reservar' },
     { label: 'Perguntas', href: '/#perguntas' },
     { label: 'Contactos', href: '#contactos' },
 ];
 
-/** Site público e catálogo: tons quentes e sempre claros, com a cor ameixa da LemServ */
+/** Logótipo: a borboleta da LemServ e o nome em maiúsculas finas */
+export function Marca({ claro = false }: { claro?: boolean }) {
+    const { loja } = useSite();
+    return (
+        <Link href="/" className="flex items-center gap-2.5" aria-label={`${loja?.nome_comercial ?? 'LemServ'}, página inicial`}>
+            <img src="/img/lemservices-marca.png" alt="" className="size-9 object-contain" />
+            <span className="flex flex-col leading-none">
+                <span className={cn('font-titulo text-[22px] tracking-[0.14em] uppercase', claro ? 'text-[var(--tinta)]' : 'text-[#efe6da]')}>
+                    {loja?.nome_comercial ?? 'LemServ'}
+                </span>
+                <span
+                    className={cn(
+                        'mt-1 text-[9.5px] tracking-[0.32em] whitespace-nowrap uppercase',
+                        claro ? 'text-[var(--muted-foreground)]' : 'text-[#a8998b]',
+                    )}
+                >
+                    Lounge e Outdoor
+                </span>
+            </span>
+        </Link>
+    );
+}
+
+/** Site público e catálogo: cabeçalho e rodapé escuros (castanho e dourado); o conteúdo decide as suas secções */
 export default function SiteLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
     const { loja, cliente, carrinho, pode, equipa } = useSite();
     const [menu, setMenu] = useState(false);
     const caminho = typeof window !== 'undefined' ? window.location.pathname : '';
-    const nome = loja?.nome_comercial ?? 'LemServ';
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de informações sobre aluguer.');
 
     useSempreClaro();
 
-    const activo = (href: string) => (href === '/' ? caminho === '/' : href.startsWith('/') && !href.includes('#') && caminho.startsWith(href));
+    const activo = (href: string) => href.startsWith('/') && !href.includes('#') && caminho.startsWith(href);
+    const icone = 'rounded-full p-2.5 text-[#efe6da]/85 transition-colors hover:bg-white/10 hover:text-white';
 
     return (
         <div className="site bg-background text-foreground flex min-h-svh flex-col">
             <Head title={titulo} />
             {equipa && !cliente && (
-                <div className="bg-primary text-primary-foreground px-4 py-1.5 text-center text-[12.5px]">
+                <div className="bg-[var(--dourado)] px-4 py-1.5 text-center text-[12.5px] text-[var(--tinta)]">
                     Está a ver a loja como equipa ({equipa.nome}): vê os preços e a disponibilidade como um cliente.{' '}
                     <a href="/painel" className="font-medium underline underline-offset-2">
                         Voltar ao LemGest
                     </a>
                 </div>
             )}
-            <div className="hidden bg-[var(--tinta)] px-4 py-2 text-[12.5px] text-white/80 sm:block">
-                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-                    <span>Entregamos, montamos e recolhemos em Maputo e Matola</span>
-                    {whatsapp && (
-                        <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white">
-                            <MessageCircle className="size-3.5" />
-                            Fale connosco no WhatsApp
-                        </a>
-                    )}
-                </div>
-            </div>
 
-            <header className="bg-background/90 sticky top-0 z-30 border-b backdrop-blur">
-                <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
-                    <Link href="/" className="flex items-center gap-3" aria-label={`${nome}, página inicial`}>
-                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-11 w-auto max-w-28 object-contain" />
-                        <span className="flex flex-col leading-none">
-                            <span className="font-titulo text-[20px] font-medium tracking-[-0.01em]">{nome}</span>
-                            <span className="text-muted-foreground mt-1 text-[10.5px] tracking-[0.18em] uppercase">Lounge e Outdoor</span>
-                        </span>
-                    </Link>
+            <header className="escuro sticky top-0 z-30 border-b border-white/10">
+                <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-4 px-4 md:px-8">
+                    <Marca />
 
-                    <nav className="hidden items-center gap-7 text-[14px] lg:flex" aria-label="Site">
+                    <nav className="hidden items-center gap-6 xl:flex" aria-label="Site">
                         {LIGACOES.map((l) => (
                             <Link
                                 key={l.href}
                                 href={l.href}
                                 className={cn(
-                                    'hover:text-foreground transition-colors',
-                                    activo(l.href) ? 'text-foreground font-medium' : 'text-muted-foreground',
+                                    'maiusculas-pequenas whitespace-nowrap transition-colors hover:text-white',
+                                    activo(l.href) ? 'text-[var(--dourado)]' : 'text-[#efe6da]/75',
                                 )}
                             >
                                 {l.label}
@@ -118,43 +124,33 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                         ))}
                     </nav>
 
-                    <div className="flex items-center gap-1">
-                        <Link href="/catalogo" className="hover:bg-muted rounded-full p-2.5" aria-label="Procurar no catálogo">
-                            <Search className="size-[18px]" />
+                    <div className="flex items-center gap-0.5">
+                        <Link href="/catalogo" className={icone} aria-label="Procurar no catálogo">
+                            <Search className="size-[18px]" strokeWidth={1.6} />
                         </Link>
-                        <Link
-                            href={cliente ? '/conta' : '/conta/entrar'}
-                            className="hover:bg-muted rounded-full p-2.5"
-                            aria-label={cliente ? 'A minha conta' : 'Entrar'}
-                        >
-                            <UserRound className="size-[18px]" />
+                        <Link href={cliente ? '/conta' : '/conta/entrar'} className={icone} aria-label={cliente ? 'A minha conta' : 'Entrar'}>
+                            <UserRound className="size-[18px]" strokeWidth={1.6} />
                         </Link>
                         {cliente && pode('loja.reservar') && (
-                            <Link
-                                href="/catalogo/reserva"
-                                className="hover:bg-muted relative rounded-full p-2.5"
-                                aria-label={`A minha reserva, ${carrinho} peças`}
-                            >
-                                <ShoppingBag className="size-[18px]" />
+                            <Link href="/catalogo/reserva" className={cn(icone, 'relative')} aria-label={`A minha reserva, ${carrinho} peças`}>
+                                <ShoppingBag className="size-[18px]" strokeWidth={1.6} />
                                 {carrinho > 0 && (
-                                    <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 min-w-[18px] rounded-full px-1 text-center text-[10.5px] leading-[18px] font-semibold tabular-nums">
+                                    <span className="absolute top-0.5 right-0.5 min-w-[18px] rounded-full bg-[var(--dourado)] px-1 text-center text-[10.5px] leading-[18px] font-semibold text-[var(--tinta)] tabular-nums">
                                         {carrinho}
                                     </span>
                                 )}
                             </Link>
                         )}
-                        {!cliente && (
-                            <Link
-                                href="/conta/registar"
-                                className="ml-2 hidden rounded-full bg-[var(--tinta)] px-4 py-2 text-[13px] font-medium text-white md:inline-block"
-                            >
-                                Criar conta
-                            </Link>
-                        )}
+                        <Link
+                            href={cliente ? '/catalogo' : '/conta/registar'}
+                            className="maiusculas-pequenas ml-3 hidden rounded-[3px] bg-[var(--dourado)] px-4 py-2.5 font-medium whitespace-nowrap text-[var(--tinta)] transition-opacity hover:opacity-90 md:inline-block"
+                        >
+                            {cliente ? 'Ver o catálogo' : 'Criar conta'}
+                        </Link>
                         <button
                             type="button"
                             onClick={() => setMenu((m) => !m)}
-                            className="hover:bg-muted rounded-full p-2.5 lg:hidden"
+                            className={cn(icone, 'xl:hidden')}
                             aria-label="Menu"
                             aria-expanded={menu}
                         >
@@ -163,20 +159,17 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                     </div>
                 </div>
                 {menu && (
-                    <nav className="border-t px-4 py-3 lg:hidden" aria-label="Site (telemóvel)">
+                    <nav className="border-t border-white/10 px-4 py-3 xl:hidden" aria-label="Site (telemóvel)">
                         {LIGACOES.map((l) => (
-                            <Link key={l.href} href={l.href} onClick={() => setMenu(false)} className="block rounded-md px-2 py-2.5 text-[15px]">
+                            <Link
+                                key={l.href}
+                                href={l.href}
+                                onClick={() => setMenu(false)}
+                                className="maiusculas-pequenas block px-2 py-3 text-[#efe6da]/85"
+                            >
                                 {l.label}
                             </Link>
                         ))}
-                        {!cliente && (
-                            <Link
-                                href="/conta/registar"
-                                className="mt-2 block rounded-full bg-[var(--tinta)] px-4 py-2.5 text-center text-[14px] font-medium text-white"
-                            >
-                                Criar conta
-                            </Link>
-                        )}
                     </nav>
                 )}
             </header>
@@ -191,7 +184,7 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                     rel="noopener noreferrer"
                     aria-label="Falar com a LemServ no WhatsApp"
                     title="Falar no WhatsApp"
-                    className="fixed right-4 bottom-4 z-40 flex size-13 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg shadow-black/15 transition-transform hover:scale-105 md:right-6 md:bottom-6"
+                    className="fixed right-4 bottom-4 z-40 flex size-13 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg shadow-black/20 transition-transform hover:scale-105 md:right-6 md:bottom-6"
                 >
                     <MessageCircle className="size-6" />
                 </a>
@@ -205,31 +198,35 @@ function Rodape() {
     const { loja, cliente } = useSite();
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de informações sobre aluguer.');
     const telefones = [loja?.telefone, loja?.telemovel].filter(Boolean).join(' · ');
-    const coluna = 'grid content-start gap-2.5 text-[14px] text-white/70';
+    const coluna = 'grid content-start gap-3 text-[14px] text-[#efe6da]/70';
+    const titulo = 'maiusculas-pequenas mb-1 text-[var(--dourado)]';
 
     return (
-        <footer id="contactos" className="mt-24 bg-[var(--tinta)] text-white">
-            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.3fr] md:px-8">
+        <footer id="contactos" className="escuro mt-24">
+            <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.5fr_1fr_1fr_1.4fr] md:px-8">
                 <div>
-                    <p className="font-titulo text-[24px]">{loja?.nome_comercial ?? 'LemServ'}</p>
-                    <p className="mt-3 max-w-xs text-[14px] leading-relaxed text-white/70">
-                        Mobiliário lounge, tendas e decoração para casamentos, aniversários e eventos de empresa. Fabrico próprio.
+                    <Marca />
+                    <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-[#efe6da]/65">
+                        Mobiliário lounge, tendas e decoração para casamentos, aniversários e eventos de empresa. Fabrico próprio, em Maputo e Matola.
                     </p>
                 </div>
                 <div className={coluna}>
-                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Loja</p>
+                    <p className={titulo}>Loja</p>
                     <Link href="/catalogo" className="hover:text-white">
                         Catálogo
                     </Link>
                     <Link href="/#eventos" className="hover:text-white">
                         Eventos
                     </Link>
+                    <Link href="/#materiais" className="hover:text-white">
+                        Materiais
+                    </Link>
                     <Link href="/#como-reservar" className="hover:text-white">
                         Como reservar
                     </Link>
                 </div>
                 <div className={coluna}>
-                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Conta</p>
+                    <p className={titulo}>Conta</p>
                     {cliente ? (
                         <Link href="/conta" className="hover:text-white">
                             A minha conta
@@ -244,24 +241,27 @@ function Rodape() {
                             </Link>
                         </>
                     )}
+                    <Link href="/#perguntas" className="hover:text-white">
+                        Perguntas frequentes
+                    </Link>
                 </div>
                 <div className={coluna}>
-                    <p className="mb-1 text-[12px] tracking-[0.16em] text-white uppercase">Contactos</p>
+                    <p className={titulo}>Contactos</p>
                     {telefones && (
-                        <span className="flex items-center gap-2">
-                            <Phone className="size-4" />
+                        <span className="flex items-center gap-2.5">
+                            <Phone className="size-4 text-[var(--dourado)]" strokeWidth={1.6} />
                             {telefones}
                         </span>
                     )}
                     {loja?.email && (
-                        <a href={`mailto:${loja.email}`} className="flex items-center gap-2 hover:text-white">
-                            <Mail className="size-4" />
+                        <a href={`mailto:${loja.email}`} className="flex items-center gap-2.5 hover:text-white">
+                            <Mail className="size-4 text-[var(--dourado)]" strokeWidth={1.6} />
                             {loja.email}
                         </a>
                     )}
                     {(loja?.morada || loja?.cidade) && (
-                        <span className="flex items-center gap-2">
-                            <MapPin className="size-4" />
+                        <span className="flex items-center gap-2.5">
+                            <MapPin className="size-4 text-[var(--dourado)]" strokeWidth={1.6} />
                             {[loja?.morada, loja?.cidade].filter(Boolean).join(', ')}
                         </span>
                     )}
@@ -270,7 +270,7 @@ function Rodape() {
                             href={whatsapp}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-[13px] font-medium text-[var(--tinta)]"
+                            className="maiusculas-pequenas mt-2 inline-flex w-fit items-center gap-2 rounded-[3px] border border-[var(--dourado)]/60 px-4 py-2.5 text-[var(--dourado)] hover:bg-[var(--dourado)] hover:text-[var(--tinta)]"
                         >
                             <MessageCircle className="size-4" />
                             Falar no WhatsApp
@@ -278,7 +278,7 @@ function Rodape() {
                     )}
                 </div>
             </div>
-            <p className="border-t border-white/10 py-5 text-center text-[12.5px] text-white/50">
+            <p className="maiusculas-pequenas border-t border-white/10 py-6 text-center text-[10.5px] text-[#efe6da]/40">
                 © {new Date().getFullYear()} {loja?.nome ?? 'LemServ'} · Matola, Moçambique
             </p>
         </footer>

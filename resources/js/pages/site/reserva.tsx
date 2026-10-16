@@ -254,7 +254,7 @@ export default function ReservaSite({ linhas, datas, transporte, contacto }: Pro
                             <button
                                 type="submit"
                                 disabled={form.processing}
-                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--tinta)] px-4 py-3 font-medium text-white disabled:opacity-60"
+                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-[3px] bg-[var(--tinta)] px-4 py-3 font-medium text-white disabled:opacity-60"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                                 Enviar pedido de reserva

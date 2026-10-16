@@ -30,7 +30,7 @@ export default function InicioCliente({ proximas, porPagar }: { proximas: Reserv
                         <div className="mt-5 flex flex-wrap gap-2">
                             <Link
                                 href="/catalogo"
-                                className="inline-flex items-center gap-2 rounded-full bg-[var(--tinta)] px-5 py-2.5 text-[13.5px] font-medium text-white"
+                                className="inline-flex items-center gap-2 rounded-[3px] bg-[var(--tinta)] px-5 py-2.5 text-[13.5px] font-medium text-white"
                             >
                                 Ir ao catálogo
                                 <ArrowRight className="size-4" />
@@ -38,7 +38,7 @@ export default function InicioCliente({ proximas, porPagar }: { proximas: Reserv
                             {pode('loja.reservar') && carrinho > 0 && (
                                 <Link
                                     href="/catalogo/reserva"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[var(--tinta)]/20 px-5 py-2.5 text-[13.5px] font-medium hover:bg-white"
+                                    className="inline-flex items-center gap-2 rounded-[3px] border border-[var(--tinta)]/20 px-5 py-2.5 text-[13.5px] font-medium hover:bg-white"
                                 >
                                     <ShoppingBag className="size-4" />
                                     Continuar a minha reserva ({carrinho})

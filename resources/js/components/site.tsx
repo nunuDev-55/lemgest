@@ -72,7 +72,10 @@ export function Foto({ src, alt, className, prioridade }: { src: string | null; 
 /** Pequeno título por cima do título da secção ("— O nosso material") */
 export function Etiqueta({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <p className={cn('text-primary mb-3 flex items-center gap-2 text-[12px] font-medium tracking-[0.16em] uppercase', className)}>{children}</p>
+        <p className={cn('maiusculas-pequenas mb-4 flex items-center gap-3 font-medium text-[#9c7a45]', className)}>
+            <span className="h-px w-6 bg-current opacity-60" aria-hidden="true" />
+            {children}
+        </p>
     );
 }
 
@@ -91,7 +94,7 @@ export function TituloSeccao({
         <div className={cn('mb-8 flex flex-wrap items-end justify-between gap-4', className)}>
             <div>
                 {etiqueta && <Etiqueta>{etiqueta}</Etiqueta>}
-                <h2 className="font-titulo max-w-xl text-[30px] leading-[1.1] tracking-[-0.01em] md:text-[38px]">{titulo}</h2>
+                <h2 className="font-titulo max-w-xl text-[34px] leading-[1.05] font-medium tracking-[-0.01em] md:text-[46px]">{titulo}</h2>
             </div>
             {accao}
         </div>
@@ -112,17 +115,16 @@ export function Disponibilidade({ n, className }: { n: number | null | undefined
 export function CartaoProduto({ p, sufixo = '' }: { p: ProdutoLoja; sufixo?: string }) {
     return (
         <Link href={`/catalogo/${p.id}${sufixo}`} className="group flex flex-col">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--areia)]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[var(--areia)]">
                 <Foto src={p.foto} alt={p.nome} className="transition-transform duration-500 group-hover:scale-[1.04]" />
-                <span className="absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full bg-white/90 opacity-0 transition-opacity group-hover:opacity-100">
-                    <ArrowUpRight className="size-4" />
+                <span className="maiusculas-pequenas absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-between rounded-[3px] bg-[var(--tinta)]/90 px-3 py-2.5 text-[10.5px] text-[#efe6da] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    Ver a peça
+                    <ArrowUpRight className="size-3.5" />
                 </span>
             </div>
             <div className="flex flex-1 flex-col gap-0.5 pt-3">
-                <p className="text-muted-foreground text-[12px] tracking-[0.06em] uppercase">
-                    {[p.categoria, p.material].filter(Boolean).join(' · ')}
-                </p>
-                <p className="font-titulo text-[18px] leading-snug">{p.nome}</p>
+                <p className="maiusculas-pequenas text-muted-foreground text-[10.5px]">{[p.categoria, p.material].filter(Boolean).join(' · ')}</p>
+                <p className="font-titulo text-[21px] leading-snug font-medium">{p.nome}</p>
                 {p.preco_dia && (
                     <p className="text-[14px]">
                         <span className="font-semibold tabular-nums">{formatNumero(p.preco_dia)} MT</span>

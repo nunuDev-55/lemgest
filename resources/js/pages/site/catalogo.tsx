@@ -1,5 +1,5 @@
 import InputError from '@/components/input-error';
-import { CartaoProduto, Etiqueta, type ProdutoLoja } from '@/components/site';
+import { CartaoProduto, type ProdutoLoja } from '@/components/site';
 import SiteLayout, { useSite } from '@/layouts/site-layout';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -16,7 +16,7 @@ interface Props {
     podeReservar: boolean;
 }
 
-const campo = 'border-input bg-card focus-visible:ring-ring h-10 rounded-full border px-4 text-[13.5px] outline-none focus-visible:ring-2';
+const campo = 'border-input bg-card focus-visible:ring-ring h-10 rounded-[3px] border px-3 text-[13.5px] outline-none focus-visible:ring-2';
 
 /** Catálogo: fotos para todos; preço e disponibilidade para quem entrou na sua conta (e para a equipa) */
 export default function Catalogo({ produtos, filtros, categorias, materiais }: Props) {
@@ -45,33 +45,47 @@ export default function Catalogo({ produtos, filtros, categorias, materiais }: P
 
     return (
         <SiteLayout titulo="Catálogo · LemServ">
-            <section className="mx-auto max-w-7xl px-4 pt-12 md:px-8">
-                <Etiqueta>Catálogo de aluguer</Etiqueta>
-                <h1 className="font-titulo text-[40px] leading-[1.05] tracking-[-0.02em] md:text-[52px]">
-                    {categoriaActual ?? 'Todo o nosso material'}
-                </h1>
-                <p className="text-muted-foreground mt-3 max-w-xl text-[15.5px] leading-relaxed">
-                    Sofás, puffs, mesas, tendas e decoração, fabricados pela LemServ.
-                    {verPrecos && ' Escolha as datas do evento para ver o que está livre.'}
-                </p>
+            {/* Cabeçalho escuro, como a capa da página inicial */}
+            <section className="escuro">
+                <div className="mx-auto max-w-7xl px-4 pt-14 pb-12 md:px-8">
+                    <p className="maiusculas-pequenas text-[#efe6da]/55">
+                        <Link href="/" className="hover:text-white">
+                            Início
+                        </Link>{' '}
+                        / Catálogo{categoriaActual ? ` / ${categoriaActual}` : ''}
+                    </p>
+                    <h1 className="titulo-maiusculo mt-6 text-[44px] md:text-[66px]">{categoriaActual ?? 'Todo o nosso material.'}</h1>
+                    <p className="mt-4 max-w-xl text-[15.5px] leading-relaxed text-[#efe6da]/70">
+                        Sofás, puffs, mesas, tendas e decoração, fabricados pela LemServ.
+                        {verPrecos && ' Escolha as datas do evento para ver o que está livre.'}
+                    </p>
 
-                {!verPrecos && (
-                    <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-[var(--areia)]/70 p-5 text-[14px] sm:flex-row sm:items-center sm:justify-between">
-                        <p>Entre na sua conta para ver os preços por dia, a disponibilidade nas suas datas e pedir a reserva.</p>
-                        <div className="flex shrink-0 gap-2">
-                            <Link href="/conta/entrar" className="rounded-full border border-[var(--tinta)]/20 px-4 py-2 font-medium hover:bg-white">
-                                Entrar
-                            </Link>
-                            <Link href="/conta/registar" className="rounded-full bg-[var(--tinta)] px-4 py-2 font-medium text-white">
-                                Criar conta
-                            </Link>
+                    {!verPrecos && (
+                        <div className="mt-8 flex flex-col gap-3 border border-[var(--dourado)]/40 p-5 text-[14px] sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-[#efe6da]/80">
+                                Entre na sua conta para ver os preços por dia, a disponibilidade nas suas datas e pedir a reserva.
+                            </p>
+                            <div className="flex shrink-0 gap-2">
+                                <Link
+                                    href="/conta/entrar"
+                                    className="maiusculas-pequenas rounded-[3px] border border-[#efe6da]/35 px-4 py-2.5 font-medium text-[#efe6da] hover:bg-white/10"
+                                >
+                                    Entrar
+                                </Link>
+                                <Link
+                                    href="/conta/registar"
+                                    className="maiusculas-pequenas rounded-[3px] bg-[var(--dourado)] px-4 py-2.5 font-medium text-[var(--tinta)]"
+                                >
+                                    Criar conta
+                                </Link>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </section>
 
             {/* Filtros (ficam presos ao topo ao descer) */}
-            <section className="bg-background/95 sticky top-[72px] z-20 mt-8 border-y backdrop-blur">
+            <section className="bg-background/95 sticky top-[76px] z-20 border-b backdrop-blur">
                 <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 md:px-8">
                     <div className="flex flex-wrap gap-1.5">
                         {[{ valor: '', label: 'Tudo' }, ...categorias].map((c) => (
@@ -80,7 +94,7 @@ export default function Catalogo({ produtos, filtros, categorias, materiais }: P
                                 type="button"
                                 onClick={() => ir({ categoria: c.valor || undefined })}
                                 className={cn(
-                                    'h-9 rounded-full px-4 text-[13px] transition-colors',
+                                    'maiusculas-pequenas h-9 rounded-[3px] px-4 text-[10.5px] transition-colors',
                                     (filtros.categoria ?? '') === c.valor
                                         ? 'bg-[var(--tinta)] font-medium text-white'
                                         : 'bg-card hover:bg-muted border',
@@ -143,7 +157,10 @@ export default function Catalogo({ produtos, filtros, categorias, materiais }: P
                             onChange={(e) => setDatas((d) => ({ ...d, ate: e.target.value }))}
                             className={cn(campo, 'h-9')}
                         />
-                        <button type="submit" className="h-9 rounded-full bg-[var(--tinta)] px-4 font-medium text-white">
+                        <button
+                            type="submit"
+                            className="maiusculas-pequenas h-9 rounded-[3px] bg-[var(--tinta)] px-4 text-[10.5px] font-medium text-white"
+                        >
                             Ver disponibilidade
                         </button>
                         <InputError message={errors.de || errors.ate} />
@@ -151,7 +168,7 @@ export default function Catalogo({ produtos, filtros, categorias, materiais }: P
                 )}
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 pt-8 md:px-8">
+            <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8">
                 <p className="text-muted-foreground mb-6 text-[13px]">
                     {produtos.length} {produtos.length === 1 ? 'peça' : 'peças'}
                 </p>

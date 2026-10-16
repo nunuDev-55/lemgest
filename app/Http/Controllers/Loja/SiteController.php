@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Loja;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
+use App\Models\Material;
 use App\Models\Produto;
 use App\Support\Definicoes;
 use Inertia\Inertia;
@@ -42,6 +43,13 @@ class SiteController extends Controller
             'servicos' => Produto::where('na_loja', true)->where('tipo', 'servico')->orderBy('loja_ordem')->orderBy('nome')
                 ->get(['id', 'nome', 'loja_descricao'])
                 ->map(fn (Produto $s) => ['id' => $s->id, 'nome' => $s->nome, 'descricao' => $s->loja_descricao]),
+            // "Os nossos materiais" (Napa, Tecido, Lã...): quantas peças da loja há de cada
+            'materiais' => Material::orderBy('ordem')->orderBy('nome')->get(['id', 'nome'])
+                ->map(fn (Material $m) => [
+                    'id' => $m->id,
+                    'nome' => $m->nome,
+                    'n' => $this->produtosDaLoja()->where('material_id', $m->id)->count(),
+                ]),
             // Para as perguntas frequentes (vem da Configuração → Documentos)
             'transporte' => app(Definicoes::class)->transporte(),
         ]);

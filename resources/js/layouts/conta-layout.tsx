@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { type ReactNode } from 'react';
-import SiteLayout, { useSempreClaro, type DadosSite } from './site-layout';
+import SiteLayout, { Marca, useSempreClaro, type DadosSite } from './site-layout';
 
 /** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta (os mesmos do site) */
 export type DadosConta = DadosSite;
@@ -33,10 +33,7 @@ export function ContaEntradaLayout({
             <Head title={`${titulo} · LemServ`} />
             <div className="flex flex-col px-5 py-6 sm:px-10 lg:px-16">
                 <div className="flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3" aria-label={`${nome}, página inicial`}>
-                        <img src={loja?.logotipo ?? '/img/lemservices-logo.png'} alt="" className="h-10 w-auto max-w-24 object-contain" />
-                        <span className="font-titulo text-[19px]">{nome}</span>
-                    </Link>
+                    <Marca claro />
                     <Link href="/" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[13px]">
                         <ChevronLeft className="size-3.5" />
                         Voltar ao site
@@ -44,7 +41,7 @@ export function ContaEntradaLayout({
                 </div>
 
                 <div className={cn('mx-auto flex w-full flex-1 flex-col justify-center py-10', largo ? 'max-w-[560px]' : 'max-w-[400px]')}>
-                    <h1 className="font-titulo text-[34px] leading-[1.1] tracking-[-0.015em]">{titulo}</h1>
+                    <h1 className="font-titulo text-[40px] leading-[1.05] font-medium tracking-[-0.01em]">{titulo}</h1>
                     {descricao && <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">{descricao}</p>}
                     <div className="mt-8">{children}</div>
                 </div>
@@ -55,11 +52,11 @@ export function ContaEntradaLayout({
             </div>
 
             <div className="relative hidden p-4 lg:block">
-                <div className="relative h-full overflow-hidden rounded-[28px]">
+                <div className="relative h-full overflow-hidden rounded-[6px]">
                     {foto && <img src={foto.grande} alt={foto.legenda} className="absolute inset-0 size-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                     <div className="absolute inset-x-10 bottom-10 text-white">
-                        <p className="font-titulo text-[34px] leading-[1.1]">Do primeiro sofá à última almofada.</p>
+                        <p className="titulo-maiusculo text-[40px]">Do primeiro sofá à última almofada.</p>
                         <p className="mt-3 max-w-md text-[15px] text-white/80">
                             Veja os preços, a disponibilidade nas suas datas e peça a reserva online. Nós tratamos do resto.
                         </p>

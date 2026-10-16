@@ -15,7 +15,7 @@ interface Props {
     relacionados: ProdutoLoja[];
 }
 
-const campo = 'border-input bg-card focus-visible:ring-ring h-10 rounded-full border px-4 text-[13.5px] outline-none focus-visible:ring-2';
+const campo = 'border-input bg-card focus-visible:ring-ring h-10 rounded-[3px] border px-3 text-[13.5px] outline-none focus-visible:ring-2';
 
 const GARANTIAS = [
     { icone: Truck, texto: 'Entrega, montagem e recolha em Maputo e Matola' },
@@ -146,7 +146,7 @@ export default function ProdutoSite({ produto: p, filtros, podeReservar, relacio
                                             className={campo}
                                         />
                                     </label>
-                                    <button type="submit" className="hover:bg-muted h-10 rounded-full border px-4 text-[13px] font-medium">
+                                    <button type="submit" className="hover:bg-muted h-10 rounded-[3px] border px-3 text-[13px] font-medium">
                                         Ver disponibilidade
                                     </button>
                                 </form>
@@ -168,7 +168,7 @@ export default function ProdutoSite({ produto: p, filtros, podeReservar, relacio
                                         <button
                                             type="submit"
                                             disabled={form.processing}
-                                            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--tinta)] px-5 text-[14px] font-medium text-white disabled:opacity-60"
+                                            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[3px] bg-[var(--tinta)] px-5 text-[14px] font-medium text-white disabled:opacity-60"
                                         >
                                             {form.processing ? <LoaderCircle className="size-4 animate-spin" /> : <Plus className="size-4" />}
                                             Juntar à reserva
@@ -185,11 +185,11 @@ export default function ProdutoSite({ produto: p, filtros, podeReservar, relacio
                                     <div className="mt-4 flex gap-2">
                                         <Link
                                             href="/conta/entrar"
-                                            className="rounded-full border border-[var(--tinta)]/20 px-4 py-2 font-medium hover:bg-white"
+                                            className="rounded-[3px] border border-[var(--tinta)]/20 px-4 py-2 font-medium hover:bg-white"
                                         >
                                             Entrar
                                         </Link>
-                                        <Link href="/conta/registar" className="rounded-full bg-[var(--tinta)] px-4 py-2 font-medium text-white">
+                                        <Link href="/conta/registar" className="rounded-[3px] bg-[var(--tinta)] px-4 py-2 font-medium text-white">
                                             Criar conta
                                         </Link>
                                     </div>
