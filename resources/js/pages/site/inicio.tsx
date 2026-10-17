@@ -1,4 +1,4 @@
-import { CarrosselProdutos, Etiqueta, Foto, TituloSeccao, useFotosSite, type ProdutoLoja } from '@/components/site';
+import { CarrosselProdutos, Etiqueta, Foto, TituloSeccao, useFotosDoEcra, useFotosSite, type ProdutoLoja } from '@/components/site';
 import { VisorFotos } from '@/components/visor-fotos';
 import SiteLayout, { linkWhatsApp, useSite } from '@/layouts/site-layout';
 import { formatNumero, formatValor } from '@/lib/format';
@@ -28,6 +28,7 @@ interface Categoria {
     descricao: string | null;
     n: number;
     foto: string | null;
+    foto_ao_alto: boolean | null;
 }
 
 interface Props {
@@ -76,15 +77,18 @@ const colunas = (n: number) => (n >= 4 ? 'md:grid-cols-4' : n === 3 ? 'md:grid-c
 /** Página inicial pública da LemServ: capa e destaques escuros (Novaire), resto claro (Livora) */
 export default function Inicio({ destaques, categorias, servicos, materiais, transporte }: Props) {
     const { loja, cliente } = useSite();
-    const { capa: capas, banner, galeria, porIndice } = useFotosSite();
-    const [capa, setCapa] = useState(0);
+    const fotosSite = useFotosSite();
+    const { banner, galeria, porIndice, fim: fotoFinal } = fotosSite;
+    // No telemóvel as fotos ao alto, no computador as deitadas (para não cortar metade de cada foto)
+    const capas = useFotosDoEcra(fotosSite.capa);
+    const [indiceCapa, setCapa] = useState(0);
+    const capa = capas.length > 0 ? indiceCapa % capas.length : 0;
     const [destaque, setDestaque] = useState(0);
     const [visor, setVisor] = useState<number | null>(null);
     const [todasAsFotos, setTodasAsFotos] = useState(false);
     const whatsapp = linkWhatsApp(loja?.telemovel ?? loja?.telefone, 'Olá LemServ, gostaria de um orçamento para um evento.');
     const pecas = destaques.filter((d) => d.foto).slice(0, 4);
     const peca = pecas[destaque] ?? null;
-    const fotoFinal = porIndice(7);
 
     // A capa muda de foto a cada 7 segundos (não muda para quem pediu menos movimento no sistema)
     useEffect(() => {
@@ -255,9 +259,11 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                     )}
                                 >
                                     <div className="aspect-[4/5] overflow-hidden">
+                                        {/* Cartão ao alto: foto de uma peça ao alto (escolhida no servidor) ou, sem nenhuma, de um evento */}
                                         <Foto
-                                            src={c.foto ?? porIndice(i * 5 + 4)?.media ?? null}
+                                            src={c.foto ?? porIndice(i * 5 + 4, true)?.media ?? null}
                                             alt={c.nome}
+                                            inteira={c.foto !== null && c.foto_ao_alto === false}
                                             className="transition-transform duration-700 group-hover:scale-[1.05]"
                                         />
                                     </div>
@@ -279,9 +285,16 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                 {/* Peça em destaque (01 / 04) */}
                 {peca && (
                     <section className="border-t border-white/10 bg-[var(--tinta-2)]">
-                        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 md:px-8 lg:grid-cols-[1.2fr_1fr]">
-                            <div className="aspect-[4/3] overflow-hidden rounded-[4px]">
-                                <Foto key={peca.id} src={peca.foto} alt={peca.nome} prioridade />
+                        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 md:px-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-16">
+                            {/* Moldura ao alto, como a maior parte das fotos das peças; as deitadas mostram-se inteiras */}
+                            <div className="aspect-[4/5] overflow-hidden rounded-[4px]">
+                                <Foto
+                                    key={peca.id}
+                                    src={peca.foto_grande ?? peca.foto}
+                                    alt={peca.nome}
+                                    inteira={peca.foto_ao_alto === false}
+                                    prioridade
+                                />
                             </div>
                             <div>
                                 <div className="flex items-center justify-between">
@@ -575,8 +588,9 @@ export default function Inicio({ destaques, categorias, servicos, materiais, tra
                                 <ArrowUpRight className="size-3.5" />
                             </Link>
                         </div>
+                        {/* Moldura larga: uma foto deitada, diferente da faixa de cima */}
                         {fotoFinal && (
-                            <img src={fotoFinal.media} alt="" loading="lazy" className="hidden h-full max-h-72 w-full object-cover md:block" />
+                            <img src={fotoFinal.grande} alt="" loading="lazy" className="hidden h-full max-h-72 w-full object-cover md:block" />
                         )}
                     </div>
                 </section>

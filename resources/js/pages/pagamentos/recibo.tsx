@@ -36,7 +36,25 @@ export default function ImprimirRecibo({ recibo: r, empresa }: { recibo: Recibo;
                         {r.facturas.length === 1 ? ' para pagamento da factura abaixo.' : ' para pagamento das facturas abaixo.'}
                     </p>
 
-                    <table className="mt-6 w-full border-collapse text-[11.5px]">
+                    {/* No telemóvel, uma linha por factura (ao imprimir fica a tabela) */}
+                    <ul className="telemovel:block mt-6 hidden divide-y divide-neutral-200 border-y border-neutral-200">
+                        {r.facturas.map((f) => (
+                            <li key={f.numero} className="flex items-end justify-between gap-3 py-3">
+                                <span>
+                                    <span className="block font-medium">Factura {f.numero}</span>
+                                    <span className="text-[12px] text-neutral-600">
+                                        {formatData(f.data)} · total {formatNumero(f.total)} MT
+                                    </span>
+                                </span>
+                                <span className="shrink-0 text-right">
+                                    <span className="block text-[11px] text-neutral-500">Pago agora</span>
+                                    <span className="font-medium tabular-nums">{formatNumero(f.valor)} MT</span>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <table className="telemovel:hidden mt-6 w-full border-collapse text-[11.5px]">
                         <thead>
                             <tr className="bg-[#6e2a63] text-white">
                                 <th className="px-2 py-1.5 text-left font-semibold">Factura</th>
@@ -58,7 +76,7 @@ export default function ImprimirRecibo({ recibo: r, empresa }: { recibo: Recibo;
                     </table>
 
                     <section className="mt-5 flex justify-end">
-                        <table className="w-72 text-[12px]">
+                        <table className="telemovel:w-full telemovel:text-[13px] w-72 text-[12px]">
                             <tbody>
                                 <tr className="border-t-2 border-[#6e2a63] text-sm font-bold">
                                     <td className="py-1.5">Total recebido</td>
@@ -68,7 +86,7 @@ export default function ImprimirRecibo({ recibo: r, empresa }: { recibo: Recibo;
                         </table>
                     </section>
 
-                    <div className="mt-16 grid grid-cols-2 gap-16 text-center text-[11px] text-neutral-600">
+                    <div className="telemovel:mt-12 telemovel:gap-6 mt-16 grid grid-cols-2 gap-16 text-center text-[11px] text-neutral-600">
                         <div className="border-t border-neutral-400 pt-1">Assinatura e carimbo da LemServ</div>
                         <div className="border-t border-neutral-400 pt-1">Assinatura do cliente</div>
                     </div>

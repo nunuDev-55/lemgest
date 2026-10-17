@@ -28,14 +28,19 @@ class SiteController extends Controller
             'categorias' => Categoria::orderBy('ordem')->orderBy('nome')->get(['id', 'nome', 'descricao'])
                 ->map(function (Categoria $c) use ($base) {
                     $produtos = $base()->where('categoria_id', $c->id);
-                    $comFoto = (clone $produtos)->whereHas('fotos')->orderByRaw('loja_destaque desc')->first();
+                    // O cartão é ao alto: de preferência uma peça com a foto ao alto, para não a cortar
+                    $comFoto = (clone $produtos)->whereHas('fotoPrincipal', fn ($q) => $q->whereColumn('altura', '>=', 'largura'))
+                        ->orderByRaw('loja_destaque desc')->first()
+                        ?? (clone $produtos)->whereHas('fotoPrincipal')->orderByRaw('loja_destaque desc')->first();
+                    $foto = $comFoto?->fotoPrincipal;
 
                     return [
                         'id' => $c->id,
                         'nome' => $c->nome,
                         'descricao' => $c->descricao,
                         'n' => $produtos->count(),
-                        'foto' => $comFoto?->fotoPrincipal ? self::urlFoto($comFoto->fotoPrincipal, 'media') : null,
+                        'foto' => $foto ? self::urlFoto($foto, 'media') : null,
+                        'foto_ao_alto' => $foto ? self::aoAlto($foto) : null,
                     ];
                 })
                 ->filter(fn ($c) => $c['n'] > 0)->values(),

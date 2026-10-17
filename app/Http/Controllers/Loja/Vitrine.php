@@ -49,13 +49,18 @@ trait Vitrine
     /** @return array<string, mixed> */
     protected function cartao(Produto $p, bool $comPreco): array
     {
+        $foto = $p->fotoPrincipal;
+
         return [
             'id' => $p->id,
             'nome' => $p->nome,
             'categoria' => $p->categoria?->nome,
             'material' => $p->material?->nome,
             'descricao' => $p->loja_descricao,
-            'foto' => $p->fotoPrincipal ? self::urlFoto($p->fotoPrincipal, 'media') : null,
+            'foto' => $foto ? self::urlFoto($foto, 'media') : null,
+            // Para a peça em destaque (foto grande) e para não cortar as fotos deitadas nas molduras ao alto
+            'foto_grande' => $foto ? self::urlFoto($foto, 'grande') : null,
+            'foto_ao_alto' => $foto ? self::aoAlto($foto) : null,
             // Preço por dia com IVA, só para clientes com sessão
             'preco_dia' => $comPreco ? $p->precoAluguerComIva() : null,
         ];
@@ -64,5 +69,11 @@ trait Vitrine
     public static function urlFoto(ProdutoFoto $foto, string $tamanho): string
     {
         return "/catalogo/fotos/{$foto->id}/{$tamanho}?v=".substr($foto->ficheiro, -8);
+    }
+
+    /** Foto ao alto (ou quadrada): enche uma moldura ao alto sem se perder a peça */
+    public static function aoAlto(ProdutoFoto $foto): bool
+    {
+        return $foto->altura >= $foto->largura;
     }
 }

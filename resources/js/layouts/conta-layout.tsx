@@ -1,5 +1,5 @@
 import { Notificacoes } from '@/components/notificacoes';
-import { useFotosSite } from '@/components/site';
+import { useFotosDoEcra, useFotosSite } from '@/components/site';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, LogOut } from 'lucide-react';
@@ -9,7 +9,7 @@ import SiteLayout, { Marca, useSempreClaro, type DadosSite } from './site-layout
 /** Dados públicos da LemServ e quem entrou, partilhados nas páginas /conta (os mesmos do site) */
 export type DadosConta = DadosSite;
 
-/** Entrar, registar e recuperar a senha: formulário à esquerda e uma foto de evento à direita */
+/** Entrar, registar e recuperar a senha: o formulário num cartão de vidro escuro por cima de uma foto de evento */
 export function ContaEntradaLayout({
     titulo,
     descricao,
@@ -25,16 +25,16 @@ export function ContaEntradaLayout({
     const { loja } = usePage<DadosConta>().props;
     const nome = loja?.nome_comercial ?? 'LemServ';
     const telefone = loja?.telemovel ?? loja?.telefone;
-    // Foto de fundo: uma das fotos da capa do site (Administração → Site e galeria)
-    const capas = useFotosSite().capa;
+    // Foto de fundo: uma das fotos da capa do site (Administração → Site e galeria), ao alto no telemóvel e deitada no computador
+    const capas = useFotosDoEcra(useFotosSite().capa);
     const foto = capas[1] ?? capas[0] ?? null;
 
     return (
         <div className="site relative flex min-h-screen flex-col overflow-hidden bg-[var(--tinta)]">
             <Head title={`${titulo} · LemServ`} />
-            {/* A foto ocupa o ecrã todo; o formulário fica num cartão por cima */}
+            {/* A foto ocupa o ecrã todo; o formulário fica num cartão de vidro por cima, onde se vê a foto desfocada */}
             {foto && <img src={foto.grande} alt="" className="absolute inset-0 size-full object-cover" />}
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--tinta)]/75 via-[var(--tinta)]/45 to-[var(--tinta)]/85" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[var(--tinta)]/70 via-[var(--tinta)]/20 to-[var(--tinta)]/80" />
 
             <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8">
                 <Marca />
@@ -45,12 +45,7 @@ export function ContaEntradaLayout({
             </div>
 
             <div className="relative flex flex-1 items-center justify-center px-4 py-8">
-                <div
-                    className={cn(
-                        'bg-background text-foreground w-full rounded-[6px] p-5 shadow-2xl shadow-black/40 sm:p-9',
-                        largo ? 'max-w-[600px]' : 'max-w-[440px]',
-                    )}
-                >
+                <div className={cn('vidro w-full rounded-[10px] p-5 shadow-2xl shadow-black/40 sm:p-9', largo ? 'max-w-[600px]' : 'max-w-[440px]')}>
                     <h1 className="font-titulo text-[36px] leading-[1.05] font-medium tracking-[-0.01em]">{titulo}</h1>
                     {descricao && <p className="text-muted-foreground mt-2 text-[14.5px] leading-relaxed">{descricao}</p>}
                     <div className="mt-7">{children}</div>

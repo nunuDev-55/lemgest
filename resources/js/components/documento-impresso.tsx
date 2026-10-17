@@ -97,8 +97,10 @@ export function DocumentoImpresso({
                 @media print { .nao-imprimir { display: none !important; } body { background: #fff !important; } .folha { box-shadow: none !important; margin: 0 !important; } }
             `}</style>
 
-            <div className="nao-imprimir sticky top-0 z-10 flex items-center justify-center gap-3 border-b bg-white px-4 py-2 text-sm text-neutral-700">
-                Use “Guardar como PDF” na janela de impressão para enviar o documento por e-mail.
+            {/* No telemóvel (telemovel:) o documento passa a uma coluna; ao imprimir e no PDF fica sempre igual, em A4 */}
+            <div className="nao-imprimir telemovel:justify-between sticky top-0 z-10 flex items-center justify-center gap-3 border-b bg-white px-4 py-2 text-sm text-neutral-700">
+                <span className="telemovel:hidden">Use “Guardar como PDF” na janela de impressão para enviar o documento por e-mail.</span>
+                <span className="telemovel:block hidden min-w-0 truncate font-semibold text-neutral-900">{referencia}</span>
                 <button
                     type="button"
                     onClick={() => window.print()}
@@ -109,13 +111,13 @@ export function DocumentoImpresso({
                 </button>
             </div>
 
-            <div className="folha mx-auto my-6 min-h-[297mm] w-[210mm] max-w-full bg-white p-[14mm] text-[12px] text-neutral-900 shadow-lg">
-                <header className="flex items-start justify-between gap-6 border-b-2 border-[#6e2a63] pb-4">
+            <div className="folha telemovel:my-0 telemovel:min-h-0 telemovel:w-full telemovel:p-5 telemovel:text-[13px] telemovel:shadow-none mx-auto my-6 min-h-[297mm] w-[210mm] max-w-full bg-white p-[14mm] text-[12px] text-neutral-900 shadow-lg">
+                <header className="telemovel:flex-col telemovel:gap-4 flex items-start justify-between gap-6 border-b-2 border-[#6e2a63] pb-4">
                     <div className="flex items-start gap-3">
                         <img
                             src={empresa.logotipo}
                             alt={empresa.nome_comercial ?? empresa.nome}
-                            className="h-24 w-auto max-w-44 shrink-0 object-contain"
+                            className="telemovel:h-14 telemovel:max-w-24 h-24 w-auto max-w-44 shrink-0 object-contain"
                         />
                         <div>
                             <p className="text-lg font-bold">{empresa.nome}</p>
@@ -126,14 +128,15 @@ export function DocumentoImpresso({
                             <p className="font-semibold">NUIT: {empresa.nuit ?? '—'}</p>
                         </div>
                     </div>
-                    <div className="text-right">
+                    {/* No telemóvel, o que é o documento vem primeiro */}
+                    <div className="telemovel:order-first telemovel:text-left text-right">
                         <p className="text-2xl font-bold tracking-wide text-[#6e2a63]">{titulo}</p>
                         <p className="text-base font-semibold">{referencia}</p>
                         {marca && <p className="mt-1 text-[11px] font-semibold tracking-wider text-neutral-500 uppercase">{marca}</p>}
                     </div>
                 </header>
 
-                <section className="mt-5 grid grid-cols-2 gap-6">
+                <section className="telemovel:grid-cols-1 telemovel:gap-4 mt-5 grid grid-cols-2 gap-6">
                     <div className="rounded border border-neutral-300 p-3">
                         <p className="mb-1 text-[10px] font-semibold tracking-wider text-neutral-500 uppercase">{destinatario}</p>
                         <p className="text-sm font-bold">{terceiro.nome}</p>
@@ -155,7 +158,31 @@ export function DocumentoImpresso({
 
                 {corpo ?? (
                     <>
-                        <table className="mt-6 w-full border-collapse text-[11.5px]">
+                        {/* No telemóvel, cada linha num cartão: descrição, conta e total */}
+                        <div className="telemovel:block mt-6 hidden">
+                            <p className="text-[11px] font-semibold tracking-wider text-neutral-500 uppercase">
+                                Material e serviços · preços sem IVA
+                            </p>
+                            <ul className="mt-2 divide-y divide-neutral-200 border-y border-neutral-200">
+                                {linhas.map((l) => (
+                                    <li key={l.id} className="py-3">
+                                        <p className="font-medium whitespace-pre-line">{l.descricao}</p>
+                                        <div className="mt-1 flex items-end justify-between gap-3 text-[12px] text-neutral-600">
+                                            <span>
+                                                {formatQuantidade(l.quantidade)} × {formatNumero(l.preco_unitario)} MT
+                                                {comDias && ` × ${l.dias ?? 1} ${(l.dias ?? 1) === 1 ? 'dia' : 'dias'}`}
+                                                {Number(l.desconto) > 0 && ` · desconto ${Number(l.desconto)}%`} · IVA {Number(l.taxa_iva)}%
+                                            </span>
+                                            <span className="shrink-0 font-medium text-neutral-900 tabular-nums">
+                                                {formatNumero(l.total_sem_iva)} MT
+                                            </span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <table className="telemovel:hidden mt-6 w-full border-collapse text-[11.5px]">
                             <thead>
                                 <tr className="bg-[#6e2a63] text-white">
                                     <th className="px-2 py-1.5 text-left font-semibold">Descrição</th>
@@ -184,7 +211,8 @@ export function DocumentoImpresso({
                             </tbody>
                         </table>
 
-                        <section className="mt-5 flex justify-between gap-6">
+                        {/* No telemóvel, os totais antes do resumo do IVA */}
+                        <section className="telemovel:flex-col-reverse telemovel:gap-5 mt-5 flex justify-between gap-6">
                             <div className="flex-1">
                                 <table className="text-[11px]">
                                     <thead>
@@ -206,7 +234,7 @@ export function DocumentoImpresso({
                                 </table>
                                 {nota && <p className="mt-4 text-[11px] whitespace-pre-line">{nota}</p>}
                             </div>
-                            <table className="w-72 text-[12px]">
+                            <table className="telemovel:w-full telemovel:text-[13px] w-72 text-[12px]">
                                 <tbody>
                                     <tr>
                                         <td className="py-1 text-neutral-600">Total sem IVA</td>

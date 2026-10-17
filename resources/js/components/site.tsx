@@ -12,6 +12,9 @@ export interface ProdutoLoja {
     material: string | null;
     descricao: string | null;
     foto: string | null;
+    foto_grande?: string | null;
+    /** A foto é ao alto (ou quadrada); as deitadas mostram-se inteiras nas molduras ao alto */
+    foto_ao_alto?: boolean | null;
     preco_dia: string | null;
     disponivel?: number | null;
 }
@@ -32,22 +35,71 @@ export function useFotosSite() {
     const marcadas = fotos.filter((f) => f.capa);
     const capa = (marcadas.length > 0 ? marcadas : fotos).slice(0, 6);
     const outras = fotos.filter((f) => !capa.includes(f));
+    // As molduras largas (faixa e fim da página) levam fotos deitadas, cada uma a sua
+    const deitadas = [...outras, ...capa].filter((f) => f.horizontal);
     return {
         todas: fotos,
         capa,
         pequena: outras[0] ?? fotos[0] ?? null,
-        banner: outras.find((f) => f.horizontal) ?? fotos.find((f) => f.horizontal) ?? fotos[0] ?? null,
+        banner: deitadas[0] ?? fotos[0] ?? null,
+        fim: deitadas[1] ?? deitadas[0] ?? fotos[0] ?? null,
         /** Até 24: a página mostra 12 e o resto com "Ver mais fotos" */
         galeria: fotos.slice(0, 24),
-        /** Foto n.º i, às voltas (para dar uma foto a cada categoria sem foto) */
-        porIndice: (i: number) => (fotos.length > 0 ? fotos[i % fotos.length] : null),
+        /** Foto n.º i, às voltas (para dar uma foto a cada categoria sem foto); com aoAlto, só entre as fotos ao alto, se as houver */
+        porIndice: (i: number, aoAlto = false) => {
+            const lista = aoAlto && fotos.some((f) => !f.horizontal) ? fotos.filter((f) => !f.horizontal) : fotos;
+            return lista.length > 0 ? lista[i % lista.length] : null;
+        },
     };
 }
 
-/** Foto que aparece com um esbatimento suave quando acaba de carregar */
-export function Foto({ src, alt, className, prioridade }: { src: string | null; alt: string; className?: string; prioridade?: boolean }) {
+/**
+ * Fotos de ponta a ponta (capa, fundo de "Entrar"): num ecrã ao alto (telemóvel) só as fotos ao alto e num ecrã deitado
+ * (computador) só as deitadas, para não se perder metade de cada foto no corte. Sem nenhuma da orientação certa, usa todas.
+ */
+export function useFotosDoEcra(fotos: FotoSite[]) {
+    const [aoAlto, setAoAlto] = useState(() => typeof window !== 'undefined' && window.matchMedia('(orientation: portrait)').matches);
+    useEffect(() => {
+        const consulta = window.matchMedia('(orientation: portrait)');
+        const mudar = () => setAoAlto(consulta.matches);
+        // Ao rodar o telemóvel ou mudar o tamanho da janela (nem todos os navegadores avisam pela consulta)
+        consulta.addEventListener('change', mudar);
+        window.addEventListener('resize', mudar);
+        return () => {
+            consulta.removeEventListener('change', mudar);
+            window.removeEventListener('resize', mudar);
+        };
+    }, []);
+    const certas = fotos.filter((f) => f.horizontal !== aoAlto);
+    return certas.length > 0 ? certas : fotos;
+}
+
+/**
+ * Foto que aparece com um esbatimento suave quando acaba de carregar. Com "inteira" (foto deitada numa moldura ao alto),
+ * mostra-se a foto toda por cima de uma cópia desfocada que enche a moldura, em vez de lhe cortar os lados.
+ */
+export function Foto({
+    src,
+    alt,
+    className,
+    prioridade,
+    inteira,
+}: {
+    src: string | null;
+    alt: string;
+    className?: string;
+    prioridade?: boolean;
+    inteira?: boolean;
+}) {
     const [carregada, setCarregada] = useState(false);
-    return src ? (
+    if (!src) {
+        return (
+            <div className={cn('text-muted-foreground flex size-full items-center justify-center bg-[var(--areia)]', className)} aria-hidden="true">
+                <ImageOff className="size-6 opacity-40" />
+            </div>
+        );
+    }
+    const foto = (
         <img
             src={src}
             alt={alt}
@@ -58,14 +110,24 @@ export function Foto({ src, alt, className, prioridade }: { src: string | null; 
                 if (img?.complete && img.naturalWidth > 0 && !carregada) setCarregada(true);
             }}
             className={cn(
-                'size-full bg-[var(--areia)] object-cover transition-opacity duration-500',
+                'size-full transition-opacity duration-500',
+                inteira ? 'relative object-contain' : 'bg-[var(--areia)] object-cover',
                 carregada ? 'opacity-100' : 'opacity-0',
                 className,
             )}
         />
-    ) : (
-        <div className={cn('text-muted-foreground flex size-full items-center justify-center bg-[var(--areia)]', className)} aria-hidden="true">
-            <ImageOff className="size-6 opacity-40" />
+    );
+    if (!inteira) return foto;
+    return (
+        <div className="relative size-full overflow-hidden bg-[var(--areia)]">
+            <img
+                src={src}
+                alt=""
+                aria-hidden="true"
+                loading={prioridade ? 'eager' : 'lazy'}
+                className="absolute inset-0 size-full scale-125 object-cover opacity-70 blur-2xl"
+            />
+            {foto}
         </div>
     );
 }
@@ -117,7 +179,12 @@ export function CartaoProduto({ p }: { p: ProdutoLoja }) {
     return (
         <Link href={`/catalogo/${p.id}`} className="group flex flex-col">
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[var(--areia)]">
-                <Foto src={p.foto} alt={p.nome} className="transition-transform duration-500 group-hover:scale-[1.04]" />
+                <Foto
+                    src={p.foto}
+                    alt={p.nome}
+                    inteira={p.foto_ao_alto === false}
+                    className="transition-transform duration-500 group-hover:scale-[1.04]"
+                />
                 <span className="maiusculas-pequenas absolute inset-x-3 bottom-3 hidden translate-y-2 items-center justify-between rounded-[3px] bg-[var(--tinta)]/90 px-3 py-2.5 text-[10.5px] text-[#efe6da] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
                     Ver a peça
                     <ArrowUpRight className="size-3.5" />

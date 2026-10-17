@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Services\Stock;
 use App\Support\Permissoes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -176,5 +178,19 @@ class SiteECatalogoTest extends TestCase
         $this->get('http://lemserv.test/login')->assertNotFound();
         $this->get('http://lemserv.test/')->assertOk();
         $this->get('http://lemserv.test/conta/entrar')->assertOk();
+    }
+
+    public function test_fotos_das_pecas_dizem_a_orientacao_para_nao_serem_cortadas(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->admin, 'web')->post("/produtos/{$this->sofa->id}/fotos", [
+            'fotos' => [UploadedFile::fake()->image('sofa-deitado.jpg', 1200, 800)],
+        ])->assertSessionHasNoErrors();
+        Auth::guard('web')->logout();
+
+        // Foto deitada: o site mostra-a inteira nas molduras ao alto; a peça em destaque usa o tamanho grande
+        $this->get('/')->assertInertia(fn (Assert $p) => $p
+            ->where('destaques.0.foto_ao_alto', false)
+            ->where('destaques.0.foto_grande', fn (string $url) => str_contains($url, "/catalogo/fotos/{$this->sofa->fotoPrincipal->id}/grande")));
     }
 }

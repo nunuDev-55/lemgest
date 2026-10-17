@@ -20,11 +20,11 @@ return [
     ],
 
     /*
-     * A LemServ decidiu não usar notas de crédito (2026-10-11): o botão e o menu saem,
-     * as notas que já existem continuam a ver-se. Para voltar a criá-las: LEMGEST_NOTAS_CREDITO=true no .env
-     * (e repor a entrada "Notas de crédito" em resources/js/lib/navegacao.ts).
+     * Notas de crédito: a dona da LemServ quer usá-las (2026-10-17, depois de as ter desligado a 2026-10-11).
+     * LEMGEST_NOTAS_CREDITO=false no .env tira o botão "Nota de crédito" da factura e impede criar novas;
+     * as que já existem continuam a ver-se (tire também a entrada do menu em resources/js/lib/navegacao.ts).
      */
-    'notas_credito' => (bool) env('LEMGEST_NOTAS_CREDITO', false),
+    'notas_credito' => (bool) env('LEMGEST_NOTAS_CREDITO', true),
 
     /*
      * Publicação do site na internet (decisão D10). Vazio = instalação local, sem restrições.

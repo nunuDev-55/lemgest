@@ -11,6 +11,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Só no ecrã de um telemóvel (menos de 768 px), nunca ao imprimir: os documentos A4 continuam iguais no papel e no PDF */
+@custom-variant telemovel (@media screen and (max-width: 47.99rem));
+
 @theme {
     --font-sans: 'Geist Variable', 'Segoe UI', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     /* Títulos do site público (letra serifada, como nas revistas de interiores) */
@@ -308,6 +311,45 @@
     --border: rgb(255 255 255 / 0.1);
     background: var(--background);
     color: var(--foreground);
+}
+
+/*
+ * Entrar e criar conta: cartão de vidro escuro por cima da foto (vê-se a foto, desfocada, por trás dos campos).
+ * As classes (bg-card, border-input...) lêem as --color-*, que o @theme resolve na raiz da página: por isso
+ * mudam-se aqui as --color-* e não só as variáveis de base.
+ */
+.site .vidro {
+    --foreground: #f6efe6;
+    --color-foreground: #f6efe6;
+    --color-card: rgb(255 255 255 / 0.07);
+    --color-card-foreground: #f6efe6;
+    --color-muted-foreground: rgb(239 230 218 / 0.72);
+    --color-border: rgb(255 255 255 / 0.16);
+    --color-input: rgb(255 255 255 / 0.28);
+    --color-ring: #c9a46a;
+    color: var(--foreground);
+    background: rgb(28 20 17 / 0.45);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
+    backdrop-filter: blur(18px) saturate(1.15);
+}
+
+/* A lista que abre nas caixas de escolha é do sistema: fica clara, para se ler */
+.site .vidro option {
+    color: #1c1411;
+    background: #fffdf9;
+}
+
+/* O preenchimento automático do navegador não pinta os campos de branco */
+.site .vidro input:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-out 0s;
+}
+
+/* Erros em vermelho claro, que se lê no vidro escuro */
+.site .vidro .text-red-600 {
+    color: #fda4a4;
 }
 
 /* Títulos ao estilo Novaire: maiúsculas finas e espaçadas */

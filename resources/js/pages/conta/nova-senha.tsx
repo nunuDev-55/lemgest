@@ -49,7 +49,7 @@ export default function NovaSenha({ token, email }: { token: string; email: stri
                 </div>
                 <Button
                     type="submit"
-                    className="h-11 w-full rounded-[3px] bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90"
+                    className="maiusculas-pequenas h-11 w-full rounded-[3px] bg-[var(--dourado)] font-medium text-[var(--tinta)] hover:bg-[var(--dourado)]/90"
                     disabled={processing}
                 >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}

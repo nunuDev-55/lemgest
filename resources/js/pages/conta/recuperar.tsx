@@ -21,9 +21,7 @@ export default function Recuperar({ estado }: { estado?: string | null }) {
             descricao="Escreva o e-mail da sua conta. Enviamos uma ligação para escolher uma senha nova."
         >
             {estado && (
-                <p className="mb-4 rounded-md border border-green-300 bg-green-50 px-3 py-2.5 text-[13.5px] text-green-900 dark:border-green-900 dark:bg-green-950/50 dark:text-green-200">
-                    {estado}
-                </p>
+                <p className="mb-4 rounded-md border border-green-300/40 bg-green-400/15 px-3 py-2.5 text-[13.5px] text-green-100">{estado}</p>
             )}
             <form onSubmit={submeter} className="grid gap-4">
                 <div className="grid gap-1.5">
@@ -41,7 +39,7 @@ export default function Recuperar({ estado }: { estado?: string | null }) {
                 </div>
                 <Button
                     type="submit"
-                    className="h-11 w-full rounded-[3px] bg-[var(--tinta)] text-white hover:bg-[var(--tinta)]/90"
+                    className="maiusculas-pequenas h-11 w-full rounded-[3px] bg-[var(--dourado)] font-medium text-[var(--tinta)] hover:bg-[var(--dourado)]/90"
                     disabled={processing}
                 >
                     {processing && <LoaderCircle className="size-4 animate-spin" />}
