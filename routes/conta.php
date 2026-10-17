@@ -4,6 +4,7 @@ use App\Http\Controllers\Conta\AreaClienteController;
 use App\Http\Controllers\Conta\EntradaController;
 use App\Http\Controllers\Conta\NovaSenhaController;
 use App\Http\Controllers\Conta\RegistoController;
+use App\Http\Controllers\Loja\FavoritoController;
 use App\Http\Middleware\GarantirContaActiva;
 use App\Http\Middleware\PermissaoCliente;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,7 @@ Route::prefix('conta')->name('conta.')->group(function () {
             Route::get('facturas/{factura}', [AreaClienteController::class, 'factura'])->name('factura');
             Route::get('recibos/{pagamento}', [AreaClienteController::class, 'recibo'])->name('recibo');
         });
+        Route::get('favoritos', [FavoritoController::class, 'index'])->middleware(PermissaoCliente::class.':loja.catalogo')->name('favoritos');
         Route::get('dados', [AreaClienteController::class, 'dados'])->name('dados');
         Route::put('dados', [AreaClienteController::class, 'guardarDados'])->name('dados.guardar');
         Route::put('senha', [AreaClienteController::class, 'mudarSenha'])->name('senha');

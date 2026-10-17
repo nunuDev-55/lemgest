@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Notifications\NovaSenhaCliente;
 use App\Support\Permissoes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -58,6 +59,16 @@ class ContaCliente extends Authenticatable
     public function aprovadaPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'aprovada_por');
+    }
+
+    /**
+     * Peças guardadas com o coração no catálogo (as mais recentes primeiro)
+     *
+     * @return BelongsToMany<Produto, $this>
+     */
+    public function favoritos(): BelongsToMany
+    {
+        return $this->belongsToMany(Produto::class, 'favoritos')->withTimestamps()->orderByPivot('created_at', 'desc');
     }
 
     public function activa(): bool

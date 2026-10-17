@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Loja\CatalogoController;
+use App\Http\Controllers\Loja\FavoritoController;
 use App\Http\Controllers\Loja\PedidoController;
 use App\Http\Controllers\Loja\SiteController;
 use App\Http\Middleware\AcessoCatalogo;
@@ -24,6 +25,11 @@ Route::middleware('throttle:loja')->group(function () {
     // Fotos: públicas, porque a página inicial mostra as peças (sem preço)
     Route::get('catalogo/fotos/{foto}/{tamanho}', [CatalogoController::class, 'foto'])->whereNumber('foto')->name('catalogo.foto');
     Route::get('catalogo/galeria/{foto}/{tamanho}', [CatalogoController::class, 'fotoSite'])->whereNumber('foto')->name('catalogo.galeria');
+
+    // Favoritos (♡): clientes com conta activa que vêem o catálogo; a lista está em /conta/favoritos
+    Route::post('catalogo/favoritos/{produto}', [FavoritoController::class, 'alternar'])
+        ->middleware(['auth:cliente', GarantirContaActiva::class, PermissaoCliente::class.':loja.catalogo'])
+        ->whereNumber('produto')->name('catalogo.favoritos');
 
     // Reservar: só clientes com conta activa e "Pedir reservas pelo catálogo" no perfil Cliente
     Route::middleware(['auth:cliente', GarantirContaActiva::class, PermissaoCliente::class.':loja.reservar'])

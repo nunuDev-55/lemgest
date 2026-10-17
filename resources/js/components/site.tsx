@@ -1,7 +1,8 @@
+import { useSite } from '@/layouts/site-layout';
 import { formatNumero } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ArrowUpRight, Check, ChevronLeft, ChevronRight, Hammer, Heart, ImageOff, LoaderCircle, Plus, Sparkles, Truck } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /** Material como o site e o catálogo o mostram (o preço e a disponibilidade só vêm para clientes com sessão e para a equipa) */
@@ -175,35 +176,153 @@ export function Disponibilidade({ n, className }: { n: number | null | undefined
     );
 }
 
-export function CartaoProduto({ p }: { p: ProdutoLoja }) {
+/** Coração (♡) para guardar a peça em A minha conta → Favoritos; muda logo, sem esperar pelo servidor */
+function BotaoFavorito({ p, className }: { p: ProdutoLoja; className?: string }) {
+    const { favoritos } = useSite();
+    const pagina = usePage().component;
+    const [aMudar, setAMudar] = useState<boolean | null>(null);
+    const guardado = aMudar ?? (favoritos ?? []).includes(p.id);
+
+    function alternar() {
+        setAMudar(!guardado);
+        router.post(
+            `/catalogo/favoritos/${p.id}`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                // Na lista de favoritos a página recarrega toda (a peça sai da lista); no resto, só os favoritos e o aviso
+                ...(pagina === 'conta/favoritos' ? {} : { only: ['favoritos', 'flash'] }),
+                onFinish: () => setAMudar(null),
+            },
+        );
+    }
+
     return (
-        <Link href={`/catalogo/${p.id}`} className="group flex flex-col">
+        <button
+            type="button"
+            onClick={alternar}
+            aria-pressed={guardado}
+            aria-label={guardado ? `Tirar ${p.nome} dos favoritos` : `Guardar ${p.nome} nos favoritos`}
+            className={cn(
+                'flex size-9 items-center justify-center rounded-full bg-white/90 text-[var(--tinta)] shadow-sm backdrop-blur transition-transform hover:scale-105',
+                className,
+            )}
+        >
+            <Heart className={cn('size-[18px] transition-colors', guardado && 'fill-[#b4233c] text-[#b4233c]')} strokeWidth={1.8} />
+        </button>
+    );
+}
+
+/** "+": junta 1 peça à reserva sem abrir a ficha (as datas e a quantidade acertam-se em "A minha reserva") */
+function BotaoJuntar({ p }: { p: ProdutoLoja }) {
+    const [estado, setEstado] = useState<'parado' | 'a-juntar' | 'junto'>('parado');
+
+    useEffect(() => {
+        if (estado !== 'junto') return;
+        const t = setTimeout(() => setEstado('parado'), 1600);
+        return () => clearTimeout(t);
+    }, [estado]);
+
+    function juntar() {
+        router.post(
+            '/catalogo/reserva/linhas',
+            { produto_id: p.id, quantidade: 1 },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['carrinho', 'flash'],
+                onStart: () => setEstado('a-juntar'),
+                onSuccess: () => setEstado('junto'),
+                onError: () => setEstado('parado'),
+            },
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={juntar}
+            disabled={estado === 'a-juntar'}
+            aria-label={`Juntar 1 ${p.nome} à reserva`}
+            title="Juntar à reserva"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--tinta)] text-[#efe6da] transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+            {estado === 'a-juntar' ? (
+                <LoaderCircle className="size-4 animate-spin" />
+            ) : estado === 'junto' ? (
+                <Check className="size-4" />
+            ) : (
+                <Plus className="size-4" />
+            )}
+        </button>
+    );
+}
+
+export function CartaoProduto({ p }: { p: ProdutoLoja }) {
+    const { cliente, pode } = useSite();
+    const ficha = `/catalogo/${p.id}`;
+    return (
+        <article className="group flex flex-col">
             <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[var(--areia)]">
-                <Foto
-                    src={p.foto}
-                    alt={p.nome}
-                    inteira={p.foto_ao_alto === false}
-                    className="transition-transform duration-500 group-hover:scale-[1.04]"
-                />
-                <span className="maiusculas-pequenas absolute inset-x-3 bottom-3 hidden translate-y-2 items-center justify-between rounded-[3px] bg-[var(--tinta)]/90 px-3 py-2.5 text-[10.5px] text-[#efe6da] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
-                    Ver a peça
-                    <ArrowUpRight className="size-3.5" />
-                </span>
+                {/* A foto e o nome levam à ficha; o coração e o "+" são botões à parte */}
+                <Link href={ficha} tabIndex={-1} aria-hidden="true" className="block size-full">
+                    <Foto
+                        src={p.foto}
+                        alt=""
+                        inteira={p.foto_ao_alto === false}
+                        className="transition-transform duration-500 group-hover:scale-[1.04]"
+                    />
+                    <span className="maiusculas-pequenas absolute inset-x-3 bottom-3 hidden translate-y-2 items-center justify-between rounded-[3px] bg-[var(--tinta)]/90 px-3 py-2.5 text-[10.5px] text-[#efe6da] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
+                        Ver a peça
+                        <ArrowUpRight className="size-3.5" />
+                    </span>
+                </Link>
+                {cliente && pode('loja.catalogo') && <BotaoFavorito p={p} className="absolute top-2.5 right-2.5" />}
             </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-3">
-                <p className="maiusculas-pequenas text-muted-foreground truncate text-[10px] sm:text-[10.5px]">
-                    {[p.categoria, p.material].filter(Boolean).join(' · ')}
-                </p>
-                <p className="font-titulo text-[18px] leading-snug font-medium break-words sm:text-[21px]">{p.nome}</p>
-                {p.preco_dia && (
-                    <p className="text-[13px] sm:text-[14px]">
-                        <span className="font-semibold tabular-nums">{formatNumero(p.preco_dia)} MT</span>
-                        <span className="text-muted-foreground text-[12px] sm:text-[12.5px]"> / dia, com IVA</span>
-                    </p>
-                )}
-                <Disponibilidade n={p.disponivel} />
+            <div className="flex items-start gap-2 pt-3">
+                <Link href={ficha} className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="maiusculas-pequenas text-muted-foreground truncate text-[10px] sm:text-[10.5px]">
+                        {[p.categoria, p.material].filter(Boolean).join(' · ')}
+                    </span>
+                    <span className="font-titulo text-[18px] leading-snug font-medium break-words sm:text-[21px]">{p.nome}</span>
+                    {p.preco_dia && (
+                        <span className="text-[13px] sm:text-[14px]">
+                            <span className="font-semibold tabular-nums">{formatNumero(p.preco_dia)} MT</span>
+                            <span className="text-muted-foreground text-[12px] sm:text-[12.5px]"> / dia, com IVA</span>
+                        </span>
+                    )}
+                    <Disponibilidade n={p.disponivel} />
+                </Link>
+                {cliente && pode('loja.reservar') && p.preco_dia && <BotaoJuntar p={p} />}
             </div>
-        </Link>
+        </article>
+    );
+}
+
+const SELOS = [
+    { icone: Hammer, titulo: 'Fabrico próprio', texto: 'Feito pela LemServ' },
+    { icone: Truck, titulo: 'Entrega e montagem', texto: 'Em Maputo e Matola' },
+    { icone: Sparkles, titulo: 'Limpo e revisto', texto: 'Antes de cada evento' },
+];
+
+/** Selos de confiança: o que a LemServ garante em todas as peças */
+export function SelosConfianca({ className }: { className?: string }) {
+    return (
+        <ul className={cn('grid grid-cols-3 gap-2 sm:gap-4', className)}>
+            {SELOS.map((s) => (
+                <li
+                    key={s.titulo}
+                    className="flex flex-col items-center gap-1.5 rounded-xl border bg-[var(--card)] px-2 py-3 text-center sm:flex-row sm:gap-3 sm:px-4 sm:py-4 sm:text-left"
+                >
+                    <s.icone className="size-5 shrink-0 text-[#9c7a45]" strokeWidth={1.6} />
+                    <span>
+                        <span className="block text-[12.5px] leading-tight font-medium sm:text-[14px]">{s.titulo}</span>
+                        <span className="text-muted-foreground text-[11.5px] sm:text-[12.5px]">{s.texto}</span>
+                    </span>
+                </li>
+            ))}
+        </ul>
     );
 }
 

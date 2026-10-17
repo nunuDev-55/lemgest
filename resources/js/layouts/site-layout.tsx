@@ -1,7 +1,7 @@
 import { Notificacoes } from '@/components/notificacoes';
 import { cn } from '@/lib/utils';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Mail, MapPin, Menu, MessageCircle, Phone, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { House, LayoutGrid, Mail, MapPin, Menu, MessageCircle, Phone, Search, ShoppingBag, UserRound, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 /** Dados partilhados nas páginas públicas (site, catálogo, área do cliente) */
@@ -18,6 +18,8 @@ export interface DadosSite {
         logotipo: string;
     } | null;
     carrinho: number;
+    /** Peças guardadas com o coração (♡) pelo cliente que entrou */
+    favoritos: number[];
     /** Alguém da equipa a ver a loja a partir do LemGest (vê os preços, não reserva) */
     equipa: { nome: string } | null;
     [key: string]: unknown;
@@ -131,17 +133,21 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                     </nav>
 
                     <div className="flex items-center gap-0.5">
-                        {/* Nos telemóveis mais estreitos sai a lupa: o catálogo está no menu e tem a sua própria pesquisa */}
-                        <Link href="/catalogo" className={cn(icone, 'max-[359px]:hidden')} aria-label="Procurar no catálogo">
+                        {/* No telemóvel, o catálogo, a conta e a reserva estão na barra de baixo */}
+                        <Link href="/catalogo" className={cn(icone, 'hidden md:inline-flex')} aria-label="Procurar no catálogo">
                             <Search className="size-[18px]" strokeWidth={1.6} />
                         </Link>
-                        <Link href={cliente ? '/conta' : '/conta/entrar'} className={icone} aria-label={cliente ? 'A minha conta' : 'Entrar'}>
+                        <Link
+                            href={cliente ? '/conta' : '/conta/entrar'}
+                            className={cn(icone, 'hidden md:inline-flex')}
+                            aria-label={cliente ? 'A minha conta' : 'Entrar'}
+                        >
                             <UserRound className="size-[18px]" strokeWidth={1.6} />
                         </Link>
                         {cliente && pode('loja.reservar') && (
                             <Link
                                 href="/catalogo/reserva"
-                                className={cn(icone, 'relative')}
+                                className={cn(icone, 'relative hidden md:inline-flex')}
                                 aria-label={`A minha reserva, ${carrinho} ${carrinho === 1 ? 'peça' : 'peças'}`}
                             >
                                 <ShoppingBag className="size-[18px]" strokeWidth={1.6} />
@@ -187,7 +193,10 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
 
             <main className="flex-1">{children}</main>
 
-            <Rodape />
+            {/* No telemóvel o rodapé acaba acima da barra de baixo */}
+            <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+                <Rodape />
+            </div>
             {whatsapp && (
                 <a
                     href={whatsapp}
@@ -195,13 +204,60 @@ export default function SiteLayout({ titulo, children }: { titulo: string; child
                     rel="noopener noreferrer"
                     aria-label="Falar com a LemServ no WhatsApp"
                     title="Falar no WhatsApp"
-                    className="fixed right-4 bottom-4 z-40 flex size-13 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg shadow-black/20 transition-transform hover:scale-105 md:right-6 md:bottom-6"
+                    className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex size-13 items-center justify-center rounded-full bg-[#1f8f4e] text-white shadow-lg shadow-black/20 transition-transform hover:scale-105 md:right-6 md:bottom-6"
                 >
                     <MessageCircle className="size-6" />
                 </a>
             )}
+            <BarraDeBaixo caminho={caminho} />
             <Notificacoes />
         </div>
+    );
+}
+
+/** Telemóvel: Início, Catálogo, Reserva e Conta sempre à mão do polegar (como nas lojas online) */
+function BarraDeBaixo({ caminho }: { caminho: string }) {
+    const { cliente, carrinho, pode, equipa } = useSite();
+    // A equipa vê a loja mas não reserva; um visitante que toque em Reserva vai entrar na conta
+    const reserva = !(equipa && !cliente) && (!cliente || pode('loja.reservar'));
+    const itens = [
+        { label: 'Início', href: '/', icone: House, activo: caminho === '/' },
+        { label: 'Catálogo', href: '/catalogo', icone: LayoutGrid, activo: caminho === '/catalogo' || /^\/catalogo\/\d+/.test(caminho) },
+        ...(reserva ? [{ label: 'Reserva', href: '/catalogo/reserva', icone: ShoppingBag, activo: caminho.startsWith('/catalogo/reserva') }] : []),
+        { label: cliente ? 'Conta' : 'Entrar', href: cliente ? '/conta' : '/conta/entrar', icone: UserRound, activo: caminho.startsWith('/conta') },
+    ];
+
+    return (
+        <nav
+            aria-label="Navegação principal"
+            className="fixed inset-x-0 bottom-0 z-40 border-t bg-[var(--card)]/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_rgb(0_0_0/0.06)] backdrop-blur md:hidden"
+        >
+            <ul className="mx-auto flex h-16 max-w-md items-stretch">
+                {itens.map((i) => (
+                    <li key={i.href} className="flex-1">
+                        <Link
+                            href={i.href}
+                            aria-current={i.activo ? 'page' : undefined}
+                            className={cn(
+                                'relative flex h-full flex-col items-center justify-center gap-1 text-[11px] transition-colors',
+                                i.activo ? 'font-medium text-[var(--tinta)]' : 'text-[#7a6c60]',
+                            )}
+                        >
+                            <span className="relative">
+                                <i.icone className="size-[22px]" strokeWidth={i.activo ? 2 : 1.6} />
+                                {i.href === '/catalogo/reserva' && carrinho > 0 && (
+                                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] rounded-full bg-[var(--dourado)] px-1 text-center text-[10.5px] leading-[18px] font-semibold text-[var(--tinta)] tabular-nums">
+                                        {carrinho}
+                                    </span>
+                                )}
+                            </span>
+                            {i.label}
+                            {i.activo && <span className="absolute top-0 h-[2px] w-8 rounded-full bg-[var(--dourado)]" aria-hidden="true" />}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </nav>
     );
 }
 

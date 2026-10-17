@@ -64,6 +64,7 @@ export function ContaEntradaLayout({
 const MENU: { label: string; href: string; exacto?: boolean; permissao?: string }[] = [
     { label: 'Início', href: '/conta', exacto: true },
     { label: 'Reservas', href: '/conta/reservas', permissao: 'conta.reservas' },
+    { label: 'Favoritos', href: '/conta/favoritos', permissao: 'loja.catalogo' },
     { label: 'Facturas e recibos', href: '/conta/facturas', permissao: 'conta.documentos' },
     { label: 'Os meus dados', href: '/conta/dados' },
 ];

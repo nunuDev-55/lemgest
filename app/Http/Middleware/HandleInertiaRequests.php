@@ -74,6 +74,10 @@ class HandleInertiaRequests extends Middleware
             'equipa' => fn () => Publico::caminho($request) && $user?->active && $user->can('loja.ver') ? ['nome' => $user->name] : null,
             'fotosSite' => fn () => Publico::caminho($request) ? FotoSite::where('visivel', true)->ordenadas()->get()->map->paraSite()->values() : [],
             'carrinho' => fn () => Publico::caminho($request) ? PedidoController::pecasNoCarrinho($request) : 0,
+            // Peças guardadas com o coração (só os números), para os cartões mostrarem o ♡ cheio
+            'favoritos' => fn () => Publico::caminho($request) && ($conta = Auth::guard('cliente')->user()) && $conta->activa() && $conta->pode('loja.catalogo')
+                ? $conta->favoritos()->pluck('produtos.id')->all()
+                : [],
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),
                 'erro' => fn () => $request->session()->get('erro'),

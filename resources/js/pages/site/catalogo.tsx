@@ -1,11 +1,31 @@
-import { CarrosselProdutos, CartaoProduto, type ProdutoLoja } from '@/components/site';
+import { CarrosselProdutos, CartaoProduto, SelosConfianca, type ProdutoLoja } from '@/components/site';
 import SiteLayout, { useSite } from '@/layouts/site-layout';
 import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
-import { ArrowRight, ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { ArrowRight, ChevronDown, History, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 type Opcao = { valor: string; label: string };
+
+/** Pesquisas recentes: só neste navegador (comodidade de quem o usa), nunca no servidor */
+const CHAVE_RECENTES = 'lemserv.pesquisas';
+
+function lerRecentes(): string[] {
+    try {
+        const lista: unknown = JSON.parse(localStorage.getItem(CHAVE_RECENTES) ?? '[]');
+        return Array.isArray(lista) ? lista.filter((t): t is string => typeof t === 'string').slice(0, 6) : [];
+    } catch {
+        return [];
+    }
+}
+
+function guardarRecentes(lista: string[]) {
+    try {
+        localStorage.setItem(CHAVE_RECENTES, JSON.stringify(lista));
+    } catch {
+        // Sem armazenamento (janela privada, por exemplo): as recentes valem só nesta visita
+    }
+}
 
 interface Props {
     produtos: ProdutoLoja[];
@@ -40,8 +60,8 @@ function Escolha({
                 value={valor}
                 onChange={(e) => onChange(e.target.value)}
                 className={cn(
-                    'bg-card focus-visible:ring-ring h-10 cursor-pointer appearance-none rounded-full border pr-9 pl-4 text-[13px] outline-none focus-visible:ring-2',
-                    largo && 'w-full',
+                    'bg-card focus-visible:ring-ring cursor-pointer appearance-none rounded-full border pr-9 pl-4 text-[13px] outline-none focus-visible:ring-2',
+                    largo ? 'h-11 w-full' : 'h-12',
                 )}
             >
                 {todos && <option value="">{todos}</option>}
@@ -51,7 +71,7 @@ function Escolha({
                     </option>
                 ))}
             </select>
-            <ChevronDown className="text-muted-foreground pointer-events-none absolute top-3 right-3.5 size-4" />
+            <ChevronDown className="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2" />
         </label>
     );
 }
@@ -78,16 +98,37 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
     const { carrinho } = useSite();
     const [pesquisa, setPesquisa] = useState(filtros.pesquisa ?? '');
     const [painel, setPainel] = useState(false);
+    const [focado, setFocado] = useState(false);
+    const [recentes, setRecentes] = useState<string[]>(lerRecentes);
+    const campoPesquisa = useRef<HTMLInputElement>(null);
 
     const ir = (novos: Record<string, string | undefined>) => {
         const params = Object.fromEntries(Object.entries({ ...filtros, ...novos }).filter(([, v]) => v));
         router.get('/catalogo', params, { preserveScroll: true, preserveState: true, replace: true });
     };
 
+    /** Guarda a pesquisa nas recentes; "sof" e depois "sofá" deixam só a mais completa */
+    const lembrar = (termo: string) => {
+        const t = termo.trim();
+        if (t.length < 3) return;
+        setRecentes((antes) => {
+            const lista = [t, ...antes.filter((r) => !t.toLowerCase().startsWith(r.toLowerCase()))].slice(0, 6);
+            guardarRecentes(lista);
+            return lista;
+        });
+    };
+    const esquecerRecentes = () => {
+        setRecentes([]);
+        guardarRecentes([]);
+    };
+
     // Pesquisa ao fim de uma pausa a escrever
     useEffect(() => {
         if (pesquisa === (filtros.pesquisa ?? '')) return;
-        const t = setTimeout(() => ir({ pesquisa }), 400);
+        const t = setTimeout(() => {
+            ir({ pesquisa });
+            lembrar(pesquisa);
+        }, 400);
         return () => clearTimeout(t);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pesquisa]);
@@ -123,7 +164,7 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
         <SiteLayout titulo="Catálogo · LemServ">
             {/* Cabeçalho escuro, como a capa da página inicial */}
             <section className="escuro">
-                <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-10 pb-10 md:flex-row md:items-end md:justify-between md:px-8 md:pt-14 md:pb-12">
+                <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 pt-7 pb-7 md:flex-row md:items-end md:justify-between md:gap-6 md:px-8 md:pt-14 md:pb-12">
                     <div className="min-w-0">
                         <p className="maiusculas-pequenas text-[#efe6da]/55">
                             <Link href="/" className="hover:text-white">
@@ -131,10 +172,10 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
                             </Link>{' '}
                             / Catálogo{categoriaActual ? ` / ${categoriaActual}` : ''}
                         </p>
-                        <h1 className="titulo-maiusculo mt-5 text-[38px] break-words sm:text-[48px] md:mt-6 md:text-[66px]">
+                        <h1 className="titulo-maiusculo mt-4 text-[32px] break-words sm:text-[48px] md:mt-6 md:text-[66px]">
                             {categoriaActual ?? 'Todo o nosso material.'}
                         </h1>
-                        <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-[#efe6da]/70 md:text-[15.5px]">
+                        <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#efe6da]/70 md:mt-4 md:text-[15.5px]">
                             Escolha as peças e junte-as à sua reserva. As datas, o local e o transporte escolhem-se no fim, em "A minha reserva".
                         </p>
                     </div>
@@ -150,11 +191,96 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
                 </div>
             </section>
 
-            {/* Barra de filtros (fica presa ao topo ao descer): no telemóvel o material e a ordem ficam em "Filtros";
-                até 1280 px as categorias ficam numa linha própria, por baixo da pesquisa; daí para cima, tudo numa linha */}
+            {/* Barra presa ao topo ao descer: a pesquisa em destaque (no telemóvel com os filtros lá dentro) e as categorias por baixo */}
             <section className="bg-background/95 sticky top-[76px] z-20 border-b backdrop-blur">
-                <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 md:px-8 xl:flex-row xl:items-center">
-                    <div className="order-2 -mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0 xl:order-1 [&::-webkit-scrollbar]:hidden">
+                <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 md:px-8">
+                    <div className="flex items-center gap-2">
+                        <div className="relative min-w-0 flex-1">
+                            <label className="block">
+                                <span className="sr-only">Procurar no catálogo</span>
+                                <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2" />
+                                <input
+                                    ref={campoPesquisa}
+                                    value={pesquisa}
+                                    onChange={(e) => setPesquisa(e.target.value)}
+                                    onFocus={() => setFocado(true)}
+                                    onBlur={() => setFocado(false)}
+                                    onKeyDown={(e) => {
+                                        // Enter fecha o teclado do telemóvel (a pesquisa já corre sozinha); Esc fecha as recentes
+                                        if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur();
+                                    }}
+                                    enterKeyHint="search"
+                                    autoComplete="off"
+                                    placeholder="Procurar sofás, puffs, tendas…"
+                                    className="bg-card focus-visible:ring-ring h-12 w-full rounded-full border pr-14 pl-11 text-[15px] shadow-sm outline-none focus-visible:ring-2 lg:pr-5"
+                                />
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => setPainel((p) => !p)}
+                                aria-expanded={painel}
+                                aria-controls="painel-filtros"
+                                aria-label={noPainel > 0 ? `Filtros (${noPainel} escolhidos)` : 'Filtros'}
+                                className={cn(
+                                    'absolute top-1/2 right-1.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:hidden',
+                                    painel ? 'bg-[var(--tinta)] text-[#efe6da]' : 'hover:bg-muted',
+                                )}
+                            >
+                                <SlidersHorizontal className="size-[18px]" />
+                                {noPainel > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] rounded-full bg-[var(--dourado)] px-1 text-center text-[10.5px] leading-[18px] font-semibold text-[var(--tinta)]">
+                                        {noPainel}
+                                    </span>
+                                )}
+                            </button>
+                            {/* Pesquisas recentes (só neste navegador), ao tocar na barra vazia */}
+                            {focado && pesquisa === '' && recentes.length > 0 && (
+                                <div
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    className="bg-card absolute inset-x-0 top-full z-30 mt-2 rounded-2xl border p-2 shadow-lg"
+                                >
+                                    <div className="flex items-center justify-between px-3 pt-1 pb-2">
+                                        <span className="maiusculas-pequenas text-muted-foreground text-[10.5px]">Pesquisas recentes</span>
+                                        <button
+                                            type="button"
+                                            onClick={esquecerRecentes}
+                                            className="text-muted-foreground hover:text-foreground text-[12.5px] underline-offset-4 hover:underline"
+                                        >
+                                            Limpar
+                                        </button>
+                                    </div>
+                                    <ul>
+                                        {recentes.map((t) => (
+                                            <li key={t}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setPesquisa(t);
+                                                        campoPesquisa.current?.blur();
+                                                    }}
+                                                    className="hover:bg-muted flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px]"
+                                                >
+                                                    <History className="text-muted-foreground size-4 shrink-0" />
+                                                    {t}
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                        <div className="hidden items-center gap-2 lg:flex">
+                            {escolhaMaterial()}
+                            {escolhaOrdem()}
+                        </div>
+                    </div>
+                    {painel && (
+                        <div id="painel-filtros" className="grid gap-2 sm:grid-cols-2 lg:hidden">
+                            {escolhaMaterial(true)}
+                            {escolhaOrdem(true)}
+                        </div>
+                    )}
+                    <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0 [&::-webkit-scrollbar]:hidden">
                         {[{ valor: '', label: 'Tudo' }, ...categorias].map((c) => (
                             <button
                                 key={c.valor || 'tudo'}
@@ -172,46 +298,6 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
                             </button>
                         ))}
                     </div>
-                    <div className="order-1 flex items-center gap-2 xl:order-2 xl:ml-auto">
-                        <label className="relative min-w-0 flex-1 xl:w-56 xl:flex-none">
-                            <span className="sr-only">Procurar no catálogo</span>
-                            <Search className="text-muted-foreground pointer-events-none absolute top-3 left-3.5 size-4" />
-                            <input
-                                value={pesquisa}
-                                onChange={(e) => setPesquisa(e.target.value)}
-                                placeholder="Procurar sofá, puff…"
-                                className="bg-card focus-visible:ring-ring h-10 w-full rounded-full border pr-4 pl-10 text-[13px] outline-none focus-visible:ring-2"
-                            />
-                        </label>
-                        <div className="hidden items-center gap-2 lg:flex">
-                            {escolhaMaterial()}
-                            {escolhaOrdem()}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setPainel((p) => !p)}
-                            aria-expanded={painel}
-                            aria-controls="painel-filtros"
-                            className={cn(
-                                'inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[13px] lg:hidden',
-                                painel ? 'bg-[var(--tinta)] text-[#efe6da]' : 'bg-card',
-                            )}
-                        >
-                            <SlidersHorizontal className="size-4" />
-                            Filtros
-                            {noPainel > 0 && (
-                                <span className="min-w-5 rounded-full bg-[var(--dourado)] px-1.5 text-center text-[11px] leading-5 font-semibold text-[var(--tinta)]">
-                                    {noPainel}
-                                </span>
-                            )}
-                        </button>
-                    </div>
-                    {painel && (
-                        <div id="painel-filtros" className="order-3 grid gap-2 sm:grid-cols-2 lg:hidden">
-                            {escolhaMaterial(true)}
-                            {escolhaOrdem(true)}
-                        </div>
-                    )}
                 </div>
             </section>
 
@@ -224,6 +310,13 @@ export default function Catalogo({ produtos, destaques, filtros, categorias, mat
                         produtos={destaques}
                         className="border-b pb-12"
                     />
+                </div>
+            )}
+
+            {/* O que a LemServ garante em todas as peças (sem filtros; com filtros, os resultados vêm primeiro) */}
+            {!temFiltros && (
+                <div className="mx-auto max-w-7xl px-4 pt-8 md:px-8">
+                    <SelosConfianca />
                 </div>
             )}
 
